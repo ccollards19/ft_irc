@@ -1,0 +1,17 @@
+
+Servers have a unique id 63 char max
+
+Users have unique nicknames 9 char max
+
+
+ - handle utf8
+ - still handle services and file sharing
+
+when user does not respond ping client and disconnect if still no answer
+
+When a server successfully registers a new user connection, it is
+   REQUIRED to send to the user unambiguous messages stating: the user
+   identifiers upon which it was registered (RPL_WELCOME), the server
+   name and version (RPL_YOURHOST), the server birth information
+   (RPL_CREATED), available user and channel modes (RPL_MYINFO), and it
+   MAY send any introductory messages which may be deemed appropriate.
