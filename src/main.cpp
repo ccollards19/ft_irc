@@ -49,7 +49,7 @@ void server::add_connection()
 
 void handle_message(server *server)
 {
-	std::cout<<"received message on fd : "<<server->eventlist[1].ident<<std::endl;
+	std::cout<<"received message on fd : "<<server->eventlist[0].ident<<std::endl;
 }
 
 void run_server(server *server)
