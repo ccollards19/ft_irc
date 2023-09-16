@@ -1,6 +1,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/event.h>
+#include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -13,7 +14,7 @@
 
 struct server
 {
-	struct sockaddr_in	sock_addr;
+	struct sockaddr		sock_addr;
 	socklen_t		socklen;
 	int			socketfd;
 	struct kevent		changelist[2];
@@ -25,8 +26,9 @@ struct server
 
 void server::add_connection()
 {
-	int newfd  = accept(this->socketfd, &(this->sock_addr), &(server->socklen));
-	EV_SET(&((this->eventlist)[1]), newfd, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, NULL);
+	std::cout<<"new connection"<<std::endl;
+	int newfd  = accept(this->socketfd, &(this->sock_addr), &(this->socklen));
+	EV_SET(&((this->changelist)[1]), newfd, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, NULL);
 }
 
 //to be expanded as needed
@@ -49,7 +51,9 @@ void run_server(server *server)
 	int nbr_event;
 	while (1)
 	{
-		nbr_event = kevent(server->kq, &(server->changelist), 0, &(server->eventlist), 1, &(server->timeout));
+		nbr_event = 0;
+		nbr_event = kevent(server->kq, reinterpret_cast<struct kevent *>(server->changelist), 1, reinterpret_cast<struct kevent *>(server->eventlist), 1, &(server->timeout));
+		//std::cout<<"listening "<<nbr_event<<std::endl;
 		if (nbr_event == -1)
 		{
 			std::cerr<<"kqueue error durring runtime"<<std::endl
@@ -58,9 +62,10 @@ void run_server(server *server)
 		}
 		for (int i = 0; i < nbr_event; i++)
 		{
-			if (server->eventlist[i].ident == server->socketfd && server->eventlist[i].filter ==  EVFILT_READ)
+			std::cout<<"it works ! "<<nbr_event<<" "<<server->eventlist[i].ident<<" == "<<server->socketfd<<std::endl;
+			if (server->eventlist[i].ident == (uintptr_t)server->socketfd)
 				server->add_connection();
-			else if (server->eventlist[i].filter == EVFILT_READ)
+			else if (server->eventlist[i].filter & EVFILT_READ)
 				handle_message(server);
 		}
 	}
@@ -68,29 +73,31 @@ void run_server(server *server)
 
 void init_server(server *server, char **argv)
 {
-	//define the "name" assigned to the server socket 
-	(server->sock_addr).sin_family = AF_INET;
-	(server->sock_addr).sin_port = htons(atoi(argv[1]));
-	(server->sock_addr).sin_addr.s_addr = INADDR_ANY;
-	server->socklen = sizeof(sock_addr);
+	//define the "name" assigned to the server socket
+	struct sockaddr_in tmp; 
+	tmp.sin_family = AF_INET;
+	tmp.sin_port = htons(atoi(argv[1]));
+	tmp.sin_addr.s_addr = INADDR_ANY;
+	memcpy(&server->sock_addr, &tmp, sizeof(struct sockaddr));//fucking hacky code, fucking c++ and its fucking types
+	server->socklen = sizeof(struct sockaddr_in);
 	//create the server socket and bind it
-	if ((server->socketfd = socket(PF_INET, SOCK_STREAM, 0)) == -1)\
+	if (((server->socketfd = socket(PF_INET, SOCK_STREAM, 0)) == -1)\
 	|| (fcntl(server->socketfd, F_SETFL, O_NONBLOCK) == -1)\
-	|| (bind(server->socketfd, server->sock_addr, sizeof(server->sock_addr)) == -1)\
-	|| (listen(server->socketfd, 1000) == -1)// TODO add macro for backlog
+	|| (bind(server->socketfd, &(server->sock_addr), sizeof(server->sock_addr)) == -1)\
+	|| (listen(server->socketfd, 1) == -1))// TODO add macro for backlog
 	{
 		std::cerr<<"socket error durring server startup "<<std::endl
 		<<"error: "<<strerror(errno)<<std::endl;
-		safe_exit(server, EXIT_FAILURE);
+		safe_shutdown(server, EXIT_FAILURE);
 	}
 	//create the kqueue
 	if ((server->kq = kqueue()) == -1)
 	{
 		std::cerr<<"kqueue error durring server startup "<<std::endl
 		<<"error: "<<strerror(errno)<<std::endl;
-		safe_exit(server, EXIT_FAILURE);
+		safe_shutdown(server, EXIT_FAILURE);
 	}
-	EV_SET(&((server->eventlist)[0]), server->socketfd, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, NULL);
+	EV_SET(&((server->changelist)[0]), server->socketfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
 }
 
 int main(int argc, char **argv)
