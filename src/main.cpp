@@ -17,19 +17,12 @@ struct server
 	struct sockaddr		sock_addr;
 	socklen_t		socklen;
 	int			socketfd;
-	struct kevent		changelist[2];
+	struct kevent		changelist;
 	struct kevent		eventlist[2];
 	int 			kq;
 	struct timespec 	timeout;
 	void			add_connection();
 };
-
-void server::add_connection()
-{
-	std::cout<<"new connection"<<std::endl;
-	int newfd  = accept(this->socketfd, &(this->sock_addr), &(this->socklen));
-	EV_SET(&((this->changelist)[1]), newfd, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, NULL);
-}
 
 //to be expanded as needed
 void safe_shutdown(server *server, int exit_code)
@@ -39,6 +32,19 @@ void safe_shutdown(server *server, int exit_code)
 	if (server->kq) 
 		close(server->kq);
 	exit(exit_code);
+}
+
+void server::add_connection()
+{
+	std::cout<<"new connection"<<std::endl;
+	int newfd  = accept(this->socketfd, &(this->sock_addr), &(this->socklen));
+	EV_SET(&(this->changelist), newfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
+	if (kevent(this->kq, &(this->changelist), 1, NULL, 0, &(this->timeout)) == -1)
+	{
+		std::cerr<<"kqueue error durring server startup "<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(this, EXIT_FAILURE);
+	}
 }
 
 void handle_message(server *server)
@@ -52,7 +58,7 @@ void run_server(server *server)
 	while (1)
 	{
 		nbr_event = 0;
-		nbr_event = kevent(server->kq, reinterpret_cast<struct kevent *>(server->changelist), 1, reinterpret_cast<struct kevent *>(server->eventlist), 1, &(server->timeout));
+		nbr_event = kevent(server->kq, NULL, 0, reinterpret_cast<struct kevent *>(server->eventlist), 2, &(server->timeout));
 		//std::cout<<"listening "<<nbr_event<<std::endl;
 		if (nbr_event == -1)
 		{
@@ -97,7 +103,13 @@ void init_server(server *server, char **argv)
 		<<"error: "<<strerror(errno)<<std::endl;
 		safe_shutdown(server, EXIT_FAILURE);
 	}
-	EV_SET(&((server->changelist)[0]), server->socketfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
+	EV_SET(&(server->changelist), server->socketfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
+	if (kevent(server->kq, &(server->changelist), 1, NULL, 0, &(server->timeout)) == -1)
+	{
+		std::cerr<<"kqueue error durring server startup "<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(server, EXIT_FAILURE);
+	}
 }
 
 int main(int argc, char **argv)
