@@ -16,7 +16,6 @@
 struct user
 {
 	int perm;
-
 };
 
 struct server
@@ -48,6 +47,7 @@ void server::add_connection()
 {
 	std::cout<<"new connection"<<std::endl;
 	int newfd  = accept(this->socketfd, &(this->sock_addr), &(this->socklen));
+	(this->connections)[newfd] =;
 	EV_SET(&(this->changelist), newfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
 	if (kevent(this->kq, &(this->changelist), 1, NULL, 0, &(this->timeout)) == -1)
 	{
