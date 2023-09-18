@@ -10,7 +10,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <iostream>
+#include <map>
 
+
+struct user
+{
+	int perm;
+
+};
 
 struct server
 {
@@ -21,6 +28,9 @@ struct server
 	struct kevent		eventlist[2];
 	int 			kq;
 	struct timespec 	timeout;
+
+	std::map<int, user>	connections;
+
 	void			add_connection();
 };
 
@@ -47,9 +57,14 @@ void server::add_connection()
 	}
 }
 
-void handle_message(server *server)
+void receive_message(server *server)
 {
 	std::cout<<"received message on fd : "<<server->eventlist[0].ident<<std::endl;
+}
+
+void send_message(server *server)
+{
+	std::cout<<"sent message on fd : "<<server->eventlist[0].ident<<std::endl;
 }
 
 void run_server(server *server)
@@ -59,7 +74,6 @@ void run_server(server *server)
 	{
 		nbr_event = 0;
 		nbr_event = kevent(server->kq, NULL, 0, reinterpret_cast<struct kevent *>(server->eventlist), 2, &(server->timeout));
-		//std::cout<<"listening "<<nbr_event<<std::endl;
 		if (nbr_event == -1)
 		{
 			std::cerr<<"kqueue error durring runtime"<<std::endl
@@ -68,11 +82,12 @@ void run_server(server *server)
 		}
 		for (int i = 0; i < nbr_event; i++)
 		{
-			std::cout<<"it works ! "<<nbr_event<<" "<<server->eventlist[i].ident<<" == "<<server->socketfd<<std::endl;
 			if (server->eventlist[i].ident == (uintptr_t)server->socketfd)
 				server->add_connection();
 			else if (server->eventlist[i].filter & EVFILT_READ)
-				handle_message(server);
+				receive_message(server);
+			else if (server->eventlist[i].filter & EVFILT_WRITE)
+				send_message(server);
 		}
 	}
 }
