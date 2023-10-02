@@ -99,7 +99,7 @@ void server::run()
 
 void server::init(char **argv)
 {
-	memset(&server, 0, sizeof(server));
+	memset(this, 0, sizeof(server));
 	std::map<int, user *> newmap;
 	_connections = newmap; 
 	//define the "name" assigned to the server socket
