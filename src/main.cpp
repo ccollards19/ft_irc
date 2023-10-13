@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctime>
@@ -16,6 +17,8 @@
 #include <map>
 #include <vector>
 
+#define SERV_NAME "test"
+#define CLIENT_TTL 10000
 
 struct channel
 {
@@ -59,6 +62,8 @@ struct client
 {
   //networking
 	int			_fd;
+  int     _timer_id;
+  bool    _ping;
   //user related
   std::string _nickname;
   std::string _username;
@@ -76,6 +81,7 @@ struct server
   //general
   std::string _servername;
 	std::map<int, client *>	_connections;
+	std::map<std::string, client *>	_nick_map;
   std::vector<channel *> _chan_list;
   //socket related
   struct sockaddr		_sock_addr;
@@ -93,6 +99,8 @@ struct server
 	void			close_connection(client *client);
 	void			send_message();
 	void			receive_message();
+	void			ping();
+  void      regular_tasks();
 	void			safe_shutdown(int exit_code);
 };
 
@@ -103,23 +111,69 @@ void server::safe_shutdown(int exit_code)
 		close(_socketfd);
 	if (_kq) 
 		close(_kq);
+  //TODO
 	exit(exit_code);
 }
 
 void server::close_connection(client *client)
 {
   close(client->_fd);
+  //TODO
 }
+
+void server::regular_tasks()
+{
+  std::cout<<"regular tasks"<<std::endl;
+  //TODO add nick cleaning 
+}
+
+void server::ping()
+{
+  client *tmp = _connections[_eventlist.ident];
+  std::cout<<"fd timer "<<tmp->_fd<<std::endl;
+  if (tmp->_ping && _eventlist.filter & EVFILT_TIMER)
+  {
+    //TODO
+    //// other logic maybe
+    // close_connection(tmp);
+  }
+  
+  
+  //   send ping msg;
+  // update timer
+	EV_SET(&_changelist, _eventlist.ident, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
+  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
+	{
+		std::cerr<<"kevent error when resetting timer"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+	}
+}
+
 void server::add_connection()
 {
 	std::cout<<"new connection"<<std::endl;
 	int newfd  = accept(_socketfd, &(_sock_addr), &(_socklen));
+  if (newfd == -1)
+	{
+		std::cerr<<"socket error when adding new connection "<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+  }
 	_connections[newfd] = new client();
 	_connections[newfd]->_fd = newfd; 
+	_connections[newfd]->_ping = 0;
 	EV_SET(&_changelist, newfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
 	if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
 	{
-		std::cerr<<"kqueue error when adding new connection "<<std::endl
+		std::cerr<<"kevent error when adding new connection "<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+	}
+	EV_SET(&_changelist, newfd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
+  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
+	{
+		std::cerr<<"kevent error when adding new connection "<<std::endl
 		<<"error: "<<strerror(errno)<<std::endl;
 		safe_shutdown(EXIT_FAILURE);
 	}
@@ -130,13 +184,32 @@ void server::receive_message()
   char *buffer = (char *)malloc(sizeof(char) * (size_t)(_eventlist.data));
 	std::cout<<"received message on fd : "<<_eventlist.ident<<std::endl;
   recv(_eventlist.ident, buffer,(size_t)(_eventlist.data), 0);
+  //TODO error check
 	std::cout<<buffer<<std::endl;
+  //_connections[_eventlist.ident]->_receive_buffer.append(buffer);
   free(buffer);
+	EV_SET(&_changelist, _eventlist.ident, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
+  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
+	{
+		std::cerr<<"kevent error when resetting timer"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+	}
 }
 
 void server::send_message()
 {
+  client *tmp = _connections[_eventlist.ident];
 	std::cout<<"sent message on fd : "<<_eventlist.ident<<std::endl;
+  send(tmp->_fd, tmp->_send_buffer.c_str(), tmp->_send_buffer.size(), 0);
+  //TODO error check and clear buffer
+  EV_SET(&_changelist, _eventlist.ident, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
+  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
+	{
+		std::cerr<<"kevent error when resetting timer"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+	}
 }
 
 void server::run()
@@ -145,22 +218,25 @@ void server::run()
 	while (1)
 	{
 		nbr_event = 0;
-		nbr_event = kevent(_kq, NULL, 0, &_eventlist, 2, &_timeout);
-		if (nbr_event == -1)
-		{
-			std::cerr<<"kqueue error durring runtime"<<std::endl<<"error: "<<strerror(errno)<<std::endl;
-			safe_shutdown(EXIT_FAILURE);
-		}
-		for (int i = 0; i < nbr_event; i++)
-		{
-			if (_eventlist.ident == (uintptr_t)_socketfd)
-				this->add_connection();
-			else if (_eventlist.filter & EVFILT_READ)
-				this->receive_message();
-			else if (_eventlist.filter & EVFILT_WRITE)
-				this->send_message();
-      // ?adding closing connection handler?
-		}
+		nbr_event = kevent(_kq, NULL, 0, &_eventlist, 1, NULL);// &_timeout);
+    std::cout<<nbr_event<<std::endl;
+    if (nbr_event == -1)
+    {
+      std::cerr<<"kqueue error durring runtime"<<std::endl<<"error: "<<strerror(errno)<<std::endl;
+      safe_shutdown(EXIT_FAILURE);
+    }
+    else if (nbr_event == 0)
+      continue;
+    else if ((_eventlist.filter == EVFILT_READ) && _eventlist.ident != (uintptr_t)_socketfd)
+      this->receive_message();
+    else if (_eventlist.filter == EVFILT_WRITE)
+      this->send_message();
+    else if (!(_eventlist.filter == EVFILT_TIMER) && _eventlist.ident == (uintptr_t)_socketfd)
+      this->add_connection();
+    else if ((_eventlist.filter == EVFILT_TIMER) && _eventlist.ident == (uintptr_t)_socketfd)
+      this->regular_tasks();
+    else if (_eventlist.filter == EVFILT_TIMER)
+      this->ping();
 	}
 }
 
@@ -198,7 +274,15 @@ void server::init(char **argv)
 	EV_SET(&(_changelist), _socketfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
 	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
 	{
-		std::cerr<<"kevent error durring server startup "<<std::endl
+		std::cerr<<"kevent error durring server startup : read"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		this->safe_shutdown(EXIT_FAILURE);
+	}
+  //add server timer for regular tasks
+	EV_SET(&(_changelist), _socketfd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 3000, NULL);
+	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
+	{
+		std::cerr<<"kevent error durring server startup : timer "<<std::endl
 		<<"error: "<<strerror(errno)<<std::endl;
 		this->safe_shutdown(EXIT_FAILURE);
 	}
