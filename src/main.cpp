@@ -19,6 +19,7 @@
 
 #define SERV_NAME "test"
 #define CLIENT_TTL 10000
+#define REG_TASK_TIMER 5000
 
 struct channel
 {
@@ -96,12 +97,19 @@ struct server
 	void			init(char **argv);
 	void			run();
 	void			add_connection();
+  void      regular_tasks();
+	void			safe_shutdown(int exit_code);
 	void			close_connection(client *client);
+  //kevent manip
+	void			update_timer(int fd, size_t time);
+	void			write_unset(int fd);
+	void			write_set(int fd);
+	void			read_unset(int fd);
+	void			read_set(int fd);
+  //actions
 	void			send_message();
 	void			receive_message();
 	void			ping();
-  void      regular_tasks();
-	void			safe_shutdown(int exit_code);
 };
 
 //to be expanded as needed
@@ -113,6 +121,61 @@ void server::safe_shutdown(int exit_code)
 		close(_kq);
   //TODO
 	exit(exit_code);
+}
+
+void	server::write_unset(int fd)
+{
+	EV_SET(&(_changelist), fd, EVFILT_WRITE, EV_ADD | EV_DISABLE | EV_CLEAR, 0, 0, NULL);
+	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
+	{
+		std::cerr<<"kevent error write_unset"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		this->safe_shutdown(EXIT_FAILURE);
+	}
+}
+
+void	server::write_set(int fd)
+{
+	EV_SET(&(_changelist), fd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
+	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
+	{
+		std::cerr<<"kevent error write_set"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		this->safe_shutdown(EXIT_FAILURE);
+	}
+}
+
+void	server::read_unset(int fd)
+{
+	EV_SET(&(_changelist), fd, EVFILT_READ, EV_ADD | EV_DISABLE | EV_CLEAR, 0, 0, NULL);
+	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
+	{
+		std::cerr<<"kevent error read_unset"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		this->safe_shutdown(EXIT_FAILURE);
+	}
+}
+
+void	server::read_set(int fd)
+{
+	EV_SET(&(_changelist), fd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
+	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
+	{
+		std::cerr<<"kevent error read_set"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
+		this->safe_shutdown(EXIT_FAILURE);
+	}
+}
+
+void server::update_timer(int fd, size_t time)
+{
+  EV_SET(&_changelist, fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, time, NULL);
+  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
+  {
+    std::cerr<<"kevent error when resetting timer"<<std::endl
+      <<"error: "<<strerror(errno)<<std::endl;
+    safe_shutdown(EXIT_FAILURE);
+  }
 }
 
 void server::close_connection(client *client)
@@ -141,13 +204,34 @@ void server::ping()
   
   //   send ping msg;
   // update timer
-	EV_SET(&_changelist, _eventlist.ident, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
-  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
-	{
-		std::cerr<<"kevent error when resetting timer"<<std::endl
-		<<"error: "<<strerror(errno)<<std::endl;
-		safe_shutdown(EXIT_FAILURE);
-	}
+	update_timer(tmp->_fd, CLIENT_TTL);
+}
+
+//LEAK DOWN HERE
+void server::receive_message()
+{
+  char *buffer = (char *)malloc(sizeof(char) * (size_t)(_eventlist.data));
+	std::cout<<"received message on fd : "<<_eventlist.ident<<std::endl;
+  int nbyte = recv(_eventlist.ident, buffer,(size_t)(_eventlist.data), 0);
+  if (nbyte > 0)
+  {
+        //_connections[_eventlist.ident]->_receive_buffer.append(buffer);
+  }
+	std::cout<<buffer<<std::endl;
+  free(buffer);
+}
+
+void server::send_message()
+{
+  client *tmp = _connections[_eventlist.ident];
+	std::cout<<"sent message on fd : "<<_eventlist.ident<<std::endl;
+  int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(), tmp->_send_buffer.size(), 0);
+  if (nbyte <= 0)
+    return;
+  tmp->_send_buffer.erase(0, nbyte - 1);
+  if (tmp->_send_buffer.empty())
+    write_unset(tmp->_fd);
+  update_timer(tmp->_fd, CLIENT_TTL);
 }
 
 void server::add_connection()
@@ -163,53 +247,9 @@ void server::add_connection()
 	_connections[newfd] = new client();
 	_connections[newfd]->_fd = newfd; 
 	_connections[newfd]->_ping = 0;
-	EV_SET(&_changelist, newfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
-	if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
-	{
-		std::cerr<<"kevent error when adding new connection "<<std::endl
-		<<"error: "<<strerror(errno)<<std::endl;
-		safe_shutdown(EXIT_FAILURE);
-	}
-	EV_SET(&_changelist, newfd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
-  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
-	{
-		std::cerr<<"kevent error when adding new connection "<<std::endl
-		<<"error: "<<strerror(errno)<<std::endl;
-		safe_shutdown(EXIT_FAILURE);
-	}
-}
-
-void server::receive_message()
-{
-  char *buffer = (char *)malloc(sizeof(char) * (size_t)(_eventlist.data));
-	std::cout<<"received message on fd : "<<_eventlist.ident<<std::endl;
-  recv(_eventlist.ident, buffer,(size_t)(_eventlist.data), 0);
-  //TODO error check
-	std::cout<<buffer<<std::endl;
-  //_connections[_eventlist.ident]->_receive_buffer.append(buffer);
-  free(buffer);
-	EV_SET(&_changelist, _eventlist.ident, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
-  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
-	{
-		std::cerr<<"kevent error when resetting timer"<<std::endl
-		<<"error: "<<strerror(errno)<<std::endl;
-		safe_shutdown(EXIT_FAILURE);
-	}
-}
-
-void server::send_message()
-{
-  client *tmp = _connections[_eventlist.ident];
-	std::cout<<"sent message on fd : "<<_eventlist.ident<<std::endl;
-  send(tmp->_fd, tmp->_send_buffer.c_str(), tmp->_send_buffer.size(), 0);
-  //TODO error check and clear buffer
-  EV_SET(&_changelist, _eventlist.ident, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR | EV_ONESHOT, 0, CLIENT_TTL, NULL);
-  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
-	{
-		std::cerr<<"kevent error when resetting timer"<<std::endl
-		<<"error: "<<strerror(errno)<<std::endl;
-		safe_shutdown(EXIT_FAILURE);
-	}
+  read_set(newfd);
+  write_unset(newfd);
+	update_timer(newfd, CLIENT_TTL);
 }
 
 void server::run()
@@ -263,29 +303,21 @@ void server::init(char **argv)
 		<<"error: "<<strerror(errno)<<std::endl;
 		this->safe_shutdown(EXIT_FAILURE);
 	}
-	//create the kqueue
-	if ((_kq = kqueue()) == -1)
+	if ((_kq = kqueue()) == -1)//create the kqueue
 	{
 		std::cerr<<"kqueue error durring server startup "<<std::endl
 		<<"error: "<<strerror(errno)<<std::endl;
 		this->safe_shutdown(EXIT_FAILURE);
 	}
-  //add server socket to the kqueue
-	EV_SET(&(_changelist), _socketfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
-	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
-	{
-		std::cerr<<"kevent error durring server startup : read"<<std::endl
-		<<"error: "<<strerror(errno)<<std::endl;
-		this->safe_shutdown(EXIT_FAILURE);
-	}
+  read_set(_socketfd);//add server socket to the kqueue
   //add server timer for regular tasks
-	EV_SET(&(_changelist), _socketfd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 3000, NULL);
-	if (kevent(_kq, &(_changelist), 1, NULL, 0, &(_timeout)) == -1)
-	{
-		std::cerr<<"kevent error durring server startup : timer "<<std::endl
-		<<"error: "<<strerror(errno)<<std::endl;
-		this->safe_shutdown(EXIT_FAILURE);
-	}
+  EV_SET(&_changelist, _socketfd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR , 0, REG_TASK_TIMER, NULL);
+  if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
+  {
+    std::cerr<<"kevent error when resetting timer"<<std::endl
+      <<"error: "<<strerror(errno)<<std::endl;
+    safe_shutdown(EXIT_FAILURE);
+  }
 }
 
 int main(int argc, char **argv)
