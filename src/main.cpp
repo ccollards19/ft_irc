@@ -28,33 +28,7 @@ struct channel
   struct client *_creator;
   std::vector<struct client *> _members;
   std::vector<struct client *> _operators;
-  // O - give "channel creator" status;
-  // o - give/take channel operator privilege;
-  // v - give/take the voice privilege;
-
-  // a - toggle the anonymous channel flag;
-  // i - toggle the invite-only channel flag;
-  // m - toggle the moderated channel;
-  // n - toggle the no messages to channel from clients on the
-  //     outside;
-  // q - toggle the quiet channel flag;
-  // p - toggle the private channel flag;
-  // s - toggle the secret channel flag;
-  // r - toggle the server reop channel flag;
-  // t - toggle the topic settable by channel operator only flag;
-
-  // k - set/remove the channel key (password);
-  // l - set/remove the user limit to channel;
-
-  // b - set/remove ban mask to keep users out;
-  // e - set/remove an exception mask to override a ban mask;
-  // I - set/remove an invitation mask to automatically override
-  //     the invite-only flag;
-
   std::string _mode;
-  // 200 char 
-  // ' ' ',' ascii 7 
-  // begin with '&' (distributed channel) or '#' 
   std::string _name;
   std::string _topic;
 };
@@ -186,14 +160,14 @@ void server::close_connection(client *client)
 
 void server::regular_tasks()
 {
-  std::cout<<"regular tasks"<<std::endl;
+  std::cout<<"regular tasks"<<std::endl;//test
   //TODO add nick cleaning 
 }
 
 void server::ping()
 {
   client *tmp = _connections[_eventlist.ident];
-  std::cout<<"fd timer "<<tmp->_fd<<std::endl;
+  std::cout<<"fd timer "<<tmp->_fd<<std::endl;//test
   if (tmp->_ping && _eventlist.filter & EVFILT_TIMER)
   {
     //TODO
@@ -210,21 +184,31 @@ void server::ping()
 //LEAK DOWN HERE
 void server::receive_message()
 {
+	std::cout<<"received message on fd : "<<_eventlist.ident<<std::endl;//test
   char *buffer = (char *)malloc(sizeof(char) * (size_t)(_eventlist.data));
-	std::cout<<"received message on fd : "<<_eventlist.ident<<std::endl;
-  int nbyte = recv(_eventlist.ident, buffer,(size_t)(_eventlist.data), 0);
-  if (nbyte > 0)
+  if (buffer == NULL)
   {
-        //_connections[_eventlist.ident]->_receive_buffer.append(buffer);
+    std::cerr<<"malloc error"<<std::endl
+      <<"error: "<<strerror(errno)<<std::endl;
+    safe_shutdown(EXIT_FAILURE);
   }
-	std::cout<<buffer<<std::endl;
+  int nbyte = recv(_eventlist.ident, buffer,(size_t)(_eventlist.data), 0);
+  if (nbyte < 0)
+  {
+    free(buffer);
+    return;
+  }
+  // _connections[_eventlist.ident]->_receive_buffer.append(buffer);
+  // if (nbyte == (size_t)_eventlist.data)
+  //   parse()//TODO
+	std::cout<<buffer<<std::endl;//test
   free(buffer);
 }
 
 void server::send_message()
 {
   client *tmp = _connections[_eventlist.ident];
-	std::cout<<"sent message on fd : "<<_eventlist.ident<<std::endl;
+	std::cout<<"sent message on fd : "<<tmp->_fd<<std::endl;//test
   int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(), tmp->_send_buffer.size(), 0);
   if (nbyte <= 0)
     return;
@@ -236,7 +220,7 @@ void server::send_message()
 
 void server::add_connection()
 {
-	std::cout<<"new connection"<<std::endl;
+	std::cout<<"new connection"<<std::endl;//test
 	int newfd  = accept(_socketfd, &(_sock_addr), &(_socklen));
   if (newfd == -1)
 	{
@@ -259,7 +243,6 @@ void server::run()
 	{
 		nbr_event = 0;
 		nbr_event = kevent(_kq, NULL, 0, &_eventlist, 1, NULL);// &_timeout);
-    std::cout<<nbr_event<<std::endl;
     if (nbr_event == -1)
     {
       std::cerr<<"kqueue error durring runtime"<<std::endl<<"error: "<<strerror(errno)<<std::endl;
