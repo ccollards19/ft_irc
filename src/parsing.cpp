@@ -75,7 +75,6 @@ Message::Message(std::string msg) {
 		msg.erase(0, pos + 1);
 	}
 	_isCommand = _command;
-	std::cout << _isCommand << "\n";
 
 }
 //int main()
