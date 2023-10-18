@@ -168,20 +168,17 @@ void server::ping()
 {
   client *tmp = _connections[_eventlist.ident];
   std::cout<<"fd timer "<<tmp->_fd<<std::endl;//test
-  if (tmp->_ping && _eventlist.filter & EVFILT_TIMER)
+  if (tmp->_ping && _eventlist.filter == EVFILT_TIMER)
   {
-    //TODO
-    //// other logic maybe
     // close_connection(tmp);
+    return;
   }
-  
-  
-  //   send ping msg;
-  // update timer
+  // send ping msg;
+  tmp->_ping = 1;
 	update_timer(tmp->_fd, CLIENT_TTL);
 }
 
-//LEAK DOWN HERE
+// TODO use EAGAIN for message 
 void server::receive_message()
 {
 	std::cout<<"received message on fd : "<<_eventlist.ident<<std::endl;//test
