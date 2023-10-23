@@ -33,9 +33,15 @@ class Message
 {
 	std::vector<std::string> _content;
 	cmd _command;
+	std::string _nick;
+	std::string _user;
+	std::string _host;
 public:
 	Message(std::string msg, std::map<std::string, int> commands);
 	bool isCommand(){return _command;};
+	std::string getNick(){return _nick;};
+	std::string getUser(){return _user;};
+	std::string getHost(){return _host;};
 	~Message(){};
 
 };
@@ -57,6 +63,18 @@ public:
 Message::Message(std::string msg, std::map<std::string, int> commands) {
 	int pos = msg.find(" ");
 	std::string fword = msg.substr(0, pos);
+	if (toascii(fword.at(0)) == ':')
+	{
+		try
+		{
+			_nick = fword.substr(1, fword.find("!") - 1);
+			_user = fword.substr(fword.find("!") + 1, fword.find("@") - fword.find("!") - 1);
+			_host = fword.substr(fword.find("@") + 1, fword.size() - 1);
+		}
+		catch (std::exception &e){}
+		msg.erase(0, pos + 1);
+		fword = msg.substr(0, msg.find(" "));
+	}
 	int cmd;
 	try{cmd = commands.at(fword);}
 	catch (std::exception &e) {cmd = 0;}
@@ -69,7 +87,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		case PRIVMSG : _command = PRIVMSG; break;
 		case JOIN : _command = JOIN; break;
 		case PING : _command = PING; break;
-		default: _command = NONE;
+		default: /*std::cout << fword << " is not a command\n"; is a test*/_command = NONE;
 	}
 	if (_command)
 		msg.erase(0, pos + 1);
@@ -81,27 +99,28 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		_content.push_back(msg.substr(0, pos));
 		msg.erase(0, pos + 1);
 	}
-
 }
-/*
-int main()
-{
-	std::map<std::string, int> cmds;
-	cmds["KICK"] = KICK;
-	cmds["TOPIC"] = TOPIC;
-	cmds["MODE"] = MODE;
-	cmds["INVITE"] = INVITE;
-	cmds["NICK"] = NICK;
-	cmds["PRIVMSG"] = PRIVMSG;
-	cmds["JOIN"] = JOIN;
-	cmds["PING"] = PING;
-	Message test("KICK nico pretty please", cmds);
-	std::cout << test.isCommand() << "\n";
-	Message test2("", cmds);
-	std::cout << test2.isCommand() << "\n";
-	Message test3("TOPIC salut ca va ?", cmds);
-	std::cout << test3.isCommand() << "\n";
-	Message test4("kickmoistp", cmds);
-	std::cout << test4.isCommand() << "\n";
-}
-*/
+//
+//int main()
+//{
+//	std::map<std::string, int> cmds;
+//	cmds["KICK"] = KICK;
+//	cmds["TOPIC"] = TOPIC;
+//	cmds["MODE"] = MODE;
+//	cmds["INVITE"] = INVITE;
+//	cmds["NICK"] = NICK;
+//	cmds["PRIVMSG"] = PRIVMSG;
+//	cmds["JOIN"] = JOIN;
+//	cmds["PING"] = PING;
+//	Message test("KICK nico pretty please", cmds);
+//	std::cout << test.isCommand() << "\n";
+//	Message test2(":nico!nicolas@user KICK Merlin", cmds);
+//	std::cout << test2.getNick() << "\n";
+//	std::cout << test2.getUser() << "\n";
+//	std::cout << test2.getHost() << "\n";
+//	std::cout << test2.isCommand() << "\n";
+//	Message test3("TOPIC salut ca va ?", cmds);
+//	std::cout << test3.isCommand() << "\n";
+//	Message test4("kickmoistp", cmds);
+//	std::cout << test4.isCommand() << "\n";
+//}
