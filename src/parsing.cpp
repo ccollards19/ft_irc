@@ -20,48 +20,55 @@
 enum cmd
 {
 	NONE = 0,
-	KICK = 31946792,
-	INVITE = 112129322959,
-	TOPIC = 1379041673,
-	MODE = 22987871,
-	NICK = 31946795,
-	PRIVMSG = 9424822412554
+	KICK,
+	INVITE,
+	TOPIC,
+	MODE,
+	NICK,
+	PRIVMSG,
+	JOIN,
+	PING
 };
 class Message
 {
-	bool _isCommand;
 	std::vector<std::string> _content;
 	cmd _command;
 public:
-	Message(std::string msg);
+	Message(std::string msg, std::map<std::string, int> commands);
+	bool isCommand(){return _command;};
 	~Message(){};
 
 };
+//
+//long int cmd2int(std::string s)
+//{
+//	if (s == "KICK") {return 1;}
+//	if (s == "INVITE") {return 2;}
+//	if (s == "TOPIC") {return 3;}
+//	if (s == "MODE") {return 4;}
+//	if (s == "NICK") {return 5;}
+//	if (s == "PRIVMSG") {return 6;}
+//	if (s == "JOIN") {return 7;}
+//	if (s == "PING") {return 8;}
+//	return 0;
+//
+//}
 
-long int StringToInt(std::string s, long int result, int n)
-{
-	if (n >= s.length())
-		return result;
-	result += pow(toascii(s.at(n)), n + 1);
-	return (StringToInt(s, result, ++n));
-}
-Message::Message(std::string msg) {
+Message::Message(std::string msg, std::map<std::string, int> commands) {
 	int pos = msg.find(" ");
 	std::string fword = msg.substr(0, pos);
-	long int cmd = StringToInt(fword, 0, 0);
-//	std::cout << StringToInt("KICK", 0, 0) << std::endl;
-//	std::cout << StringToInt("INVITE", 0, 0) << std::endl;
-//	std::cout << StringToInt("TOPIC", 0, 0) << std::endl;
-//	std::cout << StringToInt("MODE", 0, 0) << std::endl;
-//	std::cout << StringToInt("NICK", 0, 0) << std::endl;
-//	std::cout << StringToInt("PRIVMSG", 0, 0) << std::endl;
+	int cmd;
+	try{cmd = commands.at(fword);}
+	catch (std::exception &e) {cmd = 0;}
 	switch (cmd) {
-		case 31946792: _command = KICK; break;
-		case 112129322959 : _command = INVITE; break;
-		case 1379041673 : _command = TOPIC; break;
-		case 22987871 : _command = MODE; break;
-		case 31946795 : _command = NICK; break;
-		case 9424822412554 : _command = PRIVMSG; break;
+		case KICK: _command = KICK; break;
+		case INVITE : _command = INVITE; break;
+		case TOPIC : _command = TOPIC; break;
+		case MODE : _command = MODE; break;
+		case NICK : _command = NICK; break;
+		case PRIVMSG : _command = PRIVMSG; break;
+		case JOIN : _command = JOIN; break;
+		case PING : _command = PING; break;
 		default: _command = NONE;
 	}
 	if (_command)
@@ -74,13 +81,27 @@ Message::Message(std::string msg) {
 		_content.push_back(msg.substr(0, pos));
 		msg.erase(0, pos + 1);
 	}
-	_isCommand = _command;
 
 }
-//int main()
-//{
-//	Message test("KICK nico pretty please");
-//	Message test2("");
-//	Message test3("salut ca va ?");
-//	Message test4("kickmoistp");
-//}
+/*
+int main()
+{
+	std::map<std::string, int> cmds;
+	cmds["KICK"] = KICK;
+	cmds["TOPIC"] = TOPIC;
+	cmds["MODE"] = MODE;
+	cmds["INVITE"] = INVITE;
+	cmds["NICK"] = NICK;
+	cmds["PRIVMSG"] = PRIVMSG;
+	cmds["JOIN"] = JOIN;
+	cmds["PING"] = PING;
+	Message test("KICK nico pretty please", cmds);
+	std::cout << test.isCommand() << "\n";
+	Message test2("", cmds);
+	std::cout << test2.isCommand() << "\n";
+	Message test3("TOPIC salut ca va ?", cmds);
+	std::cout << test3.isCommand() << "\n";
+	Message test4("kickmoistp", cmds);
+	std::cout << test4.isCommand() << "\n";
+}
+*/
