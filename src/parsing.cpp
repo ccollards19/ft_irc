@@ -37,33 +37,27 @@ class Message
 	std::string _user;
 	std::string _host;
 public:
-	Message(std::string msg, std::map<std::string, int> commands);
+	Message(std::string &msg, std::map<std::string, int> commands);
 	bool isCommand(){return _command;};
 	std::string getNick(){return _nick;};
 	std::string getUser(){return _user;};
 	std::string getHost(){return _host;};
+	int getCommand(){return _command;};
+	std::vector<std::string> getContent(){return _content;};
 	~Message(){};
 
 };
-//
-//long int cmd2int(std::string s)
-//{
-//	if (s == "KICK") {return 1;}
-//	if (s == "INVITE") {return 2;}
-//	if (s == "TOPIC") {return 3;}
-//	if (s == "MODE") {return 4;}
-//	if (s == "NICK") {return 5;}
-//	if (s == "PRIVMSG") {return 6;}
-//	if (s == "JOIN") {return 7;}
-//	if (s == "PING") {return 8;}
-//	return 0;
-//
-//}
 
-Message::Message(std::string msg, std::map<std::string, int> commands) {
-	int pos = msg.find(" ");
+Message::Message(std::string &msg, std::map<std::string, int> commands) {
+	int pos;
+
+	pos = msg.find(" ");
+	pos == 0xffffffffffffffff ? pos = msg.size() : pos = pos;
+	std::cout << pos << "\n";
 	std::string fword = msg.substr(0, pos);
-	if (toascii(fword.at(0)) == ':')
+	std::cout << fword << "\n";
+	//check if it is a prefix and setup the next word as the first word
+	if (fword.size() && toascii(fword.at(0)) == ':')
 	{
 		try
 		{
@@ -73,8 +67,10 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		}
 		catch (std::exception &e){}
 		msg.erase(0, pos + 1);
-		fword = msg.substr(0, msg.find(" "));
+		pos = msg.find(" ");
+		fword = msg.substr(0, pos);
 	}
+	std::cout << fword << "\n";
 	int cmd;
 	try{cmd = commands.at(fword);}
 	catch (std::exception &e) {cmd = 0;}
@@ -93,34 +89,60 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		msg.erase(0, pos + 1);
 	else
 		_content.push_back(fword);
-	while (pos != std::string::npos)
+	do
 	{
-		pos = msg.find(" ");
-		_content.push_back(msg.substr(0, pos));
-		msg.erase(0, pos + 1);
+		std::cout << "current head ->" << msg << "\n";
+		if (msg.size() && toascii(msg.at(0)) == ':')
+		{
+			msg.erase(0, 1);
+			_content.push_back(msg);
+			msg.erase(0, msg.size());
+		}
+		else
+		{
+			pos = msg.find(" ");
+			pos == 0xffffffffffffffff ? _content.push_back(msg.substr(0, msg.size())) : _content.push_back(msg.substr(0, pos));
+			pos == 0xffffffffffffffff ? msg.erase(0, msg.size()) : msg.erase(0, pos + 1);
+		}
+
+	}while (pos != std::string::npos);
+
+}
+void display(std::vector<std::string> s)
+{
+	std::vector<std::string>::iterator i = s.begin();
+	while (i != s.end())
+	{
+		std::cout << *i++ << "\n";
 	}
 }
-//
-//int main()
-//{
-//	std::map<std::string, int> cmds;
-//	cmds["KICK"] = KICK;
-//	cmds["TOPIC"] = TOPIC;
-//	cmds["MODE"] = MODE;
-//	cmds["INVITE"] = INVITE;
-//	cmds["NICK"] = NICK;
-//	cmds["PRIVMSG"] = PRIVMSG;
-//	cmds["JOIN"] = JOIN;
-//	cmds["PING"] = PING;
-//	Message test("KICK nico pretty please", cmds);
-//	std::cout << test.isCommand() << "\n";
-//	Message test2(":nico!nicolas@user KICK Merlin", cmds);
-//	std::cout << test2.getNick() << "\n";
-//	std::cout << test2.getUser() << "\n";
-//	std::cout << test2.getHost() << "\n";
-//	std::cout << test2.isCommand() << "\n";
-//	Message test3("TOPIC salut ca va ?", cmds);
-//	std::cout << test3.isCommand() << "\n";
-//	Message test4("kickmoistp", cmds);
-//	std::cout << test4.isCommand() << "\n";
-//}
+
+int main()
+{
+	std::map<std::string, int> cmds;
+	cmds["KICK"] = KICK;
+	cmds["TOPIC"] = TOPIC;
+	cmds["MODE"] = MODE;
+	cmds["INVITE"] = INVITE;
+	cmds["NICK"] = NICK;
+	cmds["PRIVMSG"] = PRIVMSG;
+	cmds["JOIN"] = JOIN;
+	cmds["PING"] = PING;
+
+	std::string s1("KICK nico pretty please");
+	std::string s2(":nico!nicolas@user KICK Merlin");
+	std::string s3("PRIVMSG Cyrdu98 :salut ca va ?");
+	std::string s4("kickmoistp");
+
+	//Message test(s1, cmds);
+	Message test2(s2, cmds);
+	//Message test3(s3, cmds);
+	//Message test4(s4, cmds);
+
+	std::cout << "messages: ["<< s1 << ","<<  s2<< "," << s3<< "," << s4 << "]\n";
+
+	//display(test.getContent());
+	//display(test2.getContent());
+	display(test2.getContent());
+	//display(test4.getContent());
+}
