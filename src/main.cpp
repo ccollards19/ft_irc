@@ -37,7 +37,6 @@ struct client
 {
 	//networking
 	int			_fd;
-	int     _timer_id;
 	bool    _ping;
 	//user related
 	std::string _nickname;
@@ -101,7 +100,29 @@ void server::safe_shutdown(int exit_code)
 
 void server::server_admin()
 {
-	
+  std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
+	if ((size_t)_eventlist.data == 0)
+    safe_shutdown(EXIT_SUCCESS);
+	char *buffer = (char *)malloc(sizeof(char) * ((size_t)_eventlist.data) + 1);
+  buffer[(size_t)_eventlist.data] = 0;
+	if (buffer == NULL)
+	{
+		std::cerr<<"malloc error"<<std::endl
+			<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+	}
+	size_t nbyte = read(_eventlist.ident, buffer, (size_t)_eventlist.data);
+	if (nbyte < 0) // EAGAIN should have been used here but the subject does not allow for it 
+	{
+		free(buffer);
+		safe_shutdown(EXIT_FAILURE);
+	}
+  if (std::string(buffer).compare("QUIT") == 0)
+  {
+	  free(buffer); 
+    safe_shutdown(EXIT_SUCCESS);
+  }
+	free(buffer);
 }
 void	server::write_unset(int fd)
 {
@@ -274,16 +295,16 @@ void server::run()
 		}
 		else if (nbr_event == 0)
 			continue;
-		else if ( _eventlist.ident == STDIN_FILENO)
+		else if ( _eventlist.ident == STDIN_FILENO)// events on standard input
 			server_admin();
-		else if ( _eventlist.ident == (uintptr_t)_socketfd)
+		else if ( _eventlist.ident == (uintptr_t)_socketfd)// events on server socket
 		{
 			if (_eventlist.filter == EVFILT_READ)
 				this->add_connection();
 			else if (_eventlist.filter == EVFILT_TIMER)
 				this->regular_tasks();	
 		}
-		else
+		else // events on a client socket
 		{
 			if (_eventlist.filter == EVFILT_WRITE)
 				this->send_message();
