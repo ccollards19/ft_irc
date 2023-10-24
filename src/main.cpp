@@ -278,7 +278,7 @@ void server::run()
 			server_admin();
 		else if ( _eventlist.ident == (uintptr_t)_socketfd)
 		{
-			if (_eventlist.filter == EVFILT_TIMER)
+			if (_eventlist.filter == EVFILT_READ)
 				this->add_connection();
 			else if (_eventlist.filter == EVFILT_TIMER)
 				this->regular_tasks();	
