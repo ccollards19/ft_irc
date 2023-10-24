@@ -53,9 +53,7 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 
 	pos = msg.find(" ");
 	pos == 0xffffffffffffffff ? pos = msg.size() : pos = pos;
-	std::cout << pos << "\n";
 	std::string fword = msg.substr(0, pos);
-	std::cout << fword << "\n";
 	//check if it is a prefix and setup the next word as the first word
 	if (fword.size() && toascii(fword.at(0)) == ':')
 	{
@@ -70,7 +68,7 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 		pos = msg.find(" ");
 		fword = msg.substr(0, pos);
 	}
-	std::cout << fword << "\n";
+	//check if it is a valid command and erase the first word if it is. setup the command enum
 	int cmd;
 	try{cmd = commands.at(fword);}
 	catch (std::exception &e) {cmd = 0;}
@@ -83,15 +81,13 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 		case PRIVMSG : _command = PRIVMSG; break;
 		case JOIN : _command = JOIN; break;
 		case PING : _command = PING; break;
-		default: /*std::cout << fword << " is not a command\n"; is a test*/_command = NONE;
+		default: _command = NONE;
 	}
 	if (_command)
 		msg.erase(0, pos + 1);
-	else
-		_content.push_back(fword);
-	do
+	//loop through the content of the message. if a word start with ':' it is considered as one argument
+	while (pos != std::string::npos)
 	{
-		std::cout << "current head ->" << msg << "\n";
 		if (msg.size() && toascii(msg.at(0)) == ':')
 		{
 			msg.erase(0, 1);
@@ -105,44 +101,64 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 			pos == 0xffffffffffffffff ? msg.erase(0, msg.size()) : msg.erase(0, pos + 1);
 		}
 
-	}while (pos != std::string::npos);
-
-}
-void display(std::vector<std::string> s)
-{
-	std::vector<std::string>::iterator i = s.begin();
-	while (i != s.end())
-	{
-		std::cout << *i++ << "\n";
 	}
+
 }
-
-int main()
-{
-	std::map<std::string, int> cmds;
-	cmds["KICK"] = KICK;
-	cmds["TOPIC"] = TOPIC;
-	cmds["MODE"] = MODE;
-	cmds["INVITE"] = INVITE;
-	cmds["NICK"] = NICK;
-	cmds["PRIVMSG"] = PRIVMSG;
-	cmds["JOIN"] = JOIN;
-	cmds["PING"] = PING;
-
-	std::string s1("KICK nico pretty please");
-	std::string s2(":nico!nicolas@user KICK Merlin");
-	std::string s3("PRIVMSG Cyrdu98 :salut ca va ?");
-	std::string s4("kickmoistp");
-
-	//Message test(s1, cmds);
-	Message test2(s2, cmds);
-	//Message test3(s3, cmds);
-	//Message test4(s4, cmds);
-
-	std::cout << "messages: ["<< s1 << ","<<  s2<< "," << s3<< "," << s4 << "]\n";
-
-	//display(test.getContent());
-	//display(test2.getContent());
-	display(test2.getContent());
-	//display(test4.getContent());
-}
+//void display(std::vector<std::string> s)
+//{
+//	std::cout << "[";
+//	std::vector<std::string>::iterator i = s.begin();
+//	while (i != s.end())
+//	{
+//		std::cout << *i++ << "\n";
+//	}
+//	std::cout << "]\n";
+//}
+//
+//void display_command(int cmd)
+//{
+//	std::cout << "command: ";
+//	switch (cmd) {
+//		case NONE:std::cout << "NONE\n";break;
+//		case KICK:std::cout << "KICK\n";break;
+//		case TOPIC:std::cout << "TOPIC\n";break;
+//		case MODE:std::cout << "MODE\n";break;
+//		case INVITE:std::cout << "INVITE\n";break;
+//		case PRIVMSG:std::cout << "PRIVMSG\n";break;
+//		case JOIN:std::cout << "JOIN\n";break;
+//		case PING:std::cout << "PING\n";break;
+//	}
+//}
+//
+//int main()
+//{
+//	std::map<std::string, int> cmds;
+//	cmds["KICK"] = KICK;
+//	cmds["TOPIC"] = TOPIC;
+//	cmds["MODE"] = MODE;
+//	cmds["INVITE"] = INVITE;
+//	cmds["NICK"] = NICK;
+//	cmds["PRIVMSG"] = PRIVMSG;
+//	cmds["JOIN"] = JOIN;
+//	cmds["PING"] = PING;
+//
+//	std::string s1("KICK nico pretty please");
+//	std::string s2(":nico!nicolas@user KICK Merlin");
+//	std::string s3("PRIVMSG Cyrdu98 :salut ca va ?");
+//	std::string s4("kickmoistp");
+//
+//	Message test(s1, cmds);
+//	Message test2(s2, cmds);
+//	Message test3(s3, cmds);
+//	Message test4(s4, cmds);
+//
+//	std::cout << "cleared messages: ["<< s1 << ","<<  s2<< "," << s3<< "," << s4 << "]\n";
+//	display_command(test.getCommand());
+//	display(test.getContent());
+//	display_command(test2.getCommand());
+//	display(test2.getContent());
+//	display_command(test3.getCommand());
+//	display(test3.getContent());
+//	display_command(test4.getCommand());
+//	display(test4.getContent());
+//}
