@@ -19,7 +19,7 @@
 #include <vector>
 enum cmd
 {
-	NONE = 0,
+	NONE,
 	KICK,
 	INVITE,
 	TOPIC,
@@ -44,10 +44,24 @@ public:
 	std::string getHost(){return _host;};
 	int getCommand(){return _command;};
 	std::vector<std::string> getContent(){return _content;};
+	std::string getCommandName();
 	~Message(){};
 
 };
 
+std::string Message::getCommandName() {
+	switch (_command) {
+		case KICK:return "KICK";
+		case TOPIC:return "TOPIC";
+		case MODE:return "MODE";
+		case INVITE:return "INVITE";
+		case PRIVMSG:return "PRIVMSG";
+		case JOIN:return "JOIN";
+		case PING:return "PING";
+		case NICK:return "NICK";
+		default: return "";
+	}
+}
 Message::Message(std::string &msg, std::map<std::string, int> commands) {
 	int pos;
 
@@ -104,6 +118,7 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 	}
 
 }
+
 //void display(std::vector<std::string> s)
 //{
 //	std::cout << "[";
@@ -129,7 +144,7 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 //		case PING:std::cout << "PING\n";break;
 //	}
 //}
-//
+
 //int main()
 //{
 //	std::map<std::string, int> cmds;
