@@ -1,12 +1,28 @@
 #include "main.cpp"
 #include "errors.hpp"
 #include "parsing.cpp"
-void send_error(server &s,client &c, std::string message)
+
+void send_reply(server &s,client &c, std::string message)
 {
 	c._send_buffer.append(message);
 	s.write_set(c._fd);
 }
 
+void send_error(server &s,client &c, std::string message)
+{
+	c._send_buffer.append(message);
+	s.write_set(c._fd);
+}
+/*
+ RPL_UNIQOPIS
+ RPL_ENDOFBANLIST
+ RPL_ENDOFEXCEPTLIST
+ RPL_ENDOFINVITELIST
+ RPL_NAMEREPLY
+ RPL_ENDOFNANES
+ RPL_INVITING
+
+   */
 void handle_error_message(Message &m, server &s, client &c, int error)
 {
 	int nick;
@@ -61,85 +77,91 @@ void handle_error_message(Message &m, server &s, client &c, int error)
 		case ERR_BANNEDFROMCHAN  : send_error(s, c, m.getContent()[chan] + ":Cannot join channel (+b)");break;
 		case ERR_BADCHANNELKEY  : send_error(s, c, m.getContent()[chan] + ":Cannot join channel (+k)");break;
 		case ERR_NOPRIVILEGES  : send_error(s, c, ":Permission Denied- You're not an IRC operator\n");break;
-		case ERR_CHANOPRIVSNEEDED  : send_error(s, c, "");break;
+		case ERR_CHANOPRIVSNEEDED  : send_reply(s, c, "");break;
 		case ERR_CANTKILLSERVER  : send_error(s, c, ":You can't kill a server\n");break;
 		case ERR_NOOPERHOST  : send_error(s, c, "No O-lines for your host\n");break;
 		case ERR_UMODEUNKNOWNFLAG  : send_error(s, c, ":Unknown MODE flag\n");break;
 		case ERR_USERSDONTMATCH  : send_error(s, c, ":Can't change mode for other users\n");break;
-		case RPL_NONE  : send_error(s, c, "");break;
-		case RPL_USERHOST  : send_error(s, c, "");break;
-		case RPL_ISON  : send_error(s, c, "");break;
-		case RPL_AWAY  : send_error(s, c, "");break;
-		case RPL_UNAWAY  : send_error(s, c, "");break;
-		case RPL_NOWAWAY  : send_error(s, c, "");break;
-		case RPL_WHOISUSER  : send_error(s, c, "");break;
-		case RPL_WHOISSERVER  : send_error(s, c, "");break;
-		case RPL_WHOISOPERATOR  : send_error(s, c, "");break;
-		case RPL_WHOISIDLE  : send_error(s, c, "");break;
-		case RPL_ENDOFWHOIS  : send_error(s, c, "");break;
-		case RPL_WHOISCHANNELS  : send_error(s, c, "");break;
-		case RPL_WHOWASUSER  : send_error(s, c, "");break;
-		case RPL_ENDOFWHOWAS  : send_error(s, c, "");break;
-		case RPL_LISTSTART  : send_error(s, c, "");break;
-		case RPL_LIST  : send_error(s, c, "");break;
-		case RPL_LISTEND  : send_error(s, c, "");break;
-		case RPL_CHANNELMODEIS  : send_error(s, c, "");break;
-		case RPL_NOTOPIC  : send_error(s, c, "");break;
-		case RPL_TOPIC  : send_error(s, c, "");break;
-		case RPL_INVITING  : send_error(s, c, "");break;
-		case RPL_SUMMONING  : send_error(s, c, "");break;
-		case RPL_VERSION  : send_error(s, c, "");break;
-		case RPL_WHOREPLY  : send_error(s, c, "");break;
-		case RPL_ENDOFWHO  : send_error(s, c, "");break;
-		case RPL_NAMREPLY  : send_error(s, c, "");break;
-		case RPL_ENDOFNAMES  : send_error(s, c, "");break;
-		case RPL_LINKS  : send_error(s, c, "");break;
-		case RPL_ENDOFLINKS  : send_error(s, c, "");break;
-		case RPL_BANLIST  : send_error(s, c, "");break;
-		case RPL_ENDOFBANLIST  : send_error(s, c, "");break;
-		case RPL_INFO  : send_error(s, c, "");break;
-		case RPL_ENDOFINFO  : send_error(s, c, "");break;
-		case RPL_MOTDSTART  : send_error(s, c, "");break;
-		case RPL_MOTD  : send_error(s, c, "");break;
-		case RPL_ENDOFMOTD  : send_error(s, c, "");break;
-		case RPL_YOUREOPER  : send_error(s, c, "");break;
-		case RPL_REHASHING  : send_error(s, c, "");break;
-		case RPL_TIME  : send_error(s, c, "");break;
-		case RPL_USERSSTART  : send_error(s, c, "");break;
-		case RPL_USERS  : send_error(s, c, "");break;
-		case RPL_ENDOFUSERS  : send_error(s, c, "");break;
-		case RPL_NOUSERS  : send_error(s, c, "");break;
-		case RPL_TRACELINK  : send_error(s, c, "");break;
-		case RPL_TRACECONNECTING  : send_error(s, c, "");break;
-		case RPL_TRACEHANDSHAKE  : send_error(s, c, "");break;
-		case RPL_TRACEUNKNOWN  : send_error(s, c, "");break;
-		case RPL_TRACEOPERATOR  : send_error(s, c, "");break;
-		case RPL_TRACEUSER  : send_error(s, c, "");break;
-		case RPL_TRACESERVER  : send_error(s, c, "");break;
-		case RPL_TRACENEWTYPE  : send_error(s, c, "");break;
-		case RPL_TRACELOG  : send_error(s, c, "");break;
-		case RPL_STATSLINKINFO  : send_error(s, c, "");break;
-		case RPL_STATSCOMMANDS  : send_error(s, c, "");break;
-		case RPL_STATSCLINE  : send_error(s, c, "");break;
-		case RPL_STATSNLINE  : send_error(s, c, "");break;
-		case RPL_STATSILINE  : send_error(s, c, "");break;
-		case RPL_STATSKLINE  : send_error(s, c, "");break;
-		case RPL_STATSYLINE  : send_error(s, c, "");break;
-		case RPL_ENDOFSTATS  : send_error(s, c, "");break;
-		case RPL_STATSLLINE  : send_error(s, c, "");break;
-		case RPL_STATSUPTIME  : send_error(s, c, "");break;
-		case RPL_STATSOLINE  : send_error(s, c, "");break;
-		case RPL_STATSHLINE  : send_error(s, c, "");break;
-		case RPL_UMODEIS  : send_error(s, c, "");break;
-		case RPL_LUSERCLIENT  : send_error(s, c, "");break;
-		case RPL_LUSEROP  : send_error(s, c, "");break;
-		case RPL_LUSERUNKNOWN  : send_error(s, c, "");break;
-		case RPL_LUSERCHANNELS  : send_error(s, c, "");break;
-		case RPL_LUSERME  : send_error(s, c, "");break;
-		case RPL_ADMINME  : send_error(s, c, "");break;
-		case RPL_ADMINLOC1  : send_error(s, c, "");break;
-		case RPL_ADMINLOC2  : send_error(s, c, "");break;
-		case RPL_ADMINEMAIL  : send_error(s, c, "");break;
+		case RPL_WELCOME : send_reply(s, c, "Welcome to the Internet Relay Network " + c._nickname + "!" +c._username + "@" + c._hostname + "\n");break;
+		case RPL_YOURHOST : send_reply(s, c, "Your host is " + s._servername + ", running version S19CCKKNER\n");break;
+		case RPL_CREATED : send_reply(s, c, "This server was created " + s._servername + "\n");break; //TODO change servername to creation_date
+		case RPL_MYINFO : send_reply(s, c, s._servername + " S19CCKKNER +itkol\n");break;
+		case RPL_BOUNCE : send_reply(s, c, s._servername+ " is already full\n");break;
+		case RPL_EXCEPTLIST : send_reply(s, c, m.getContent()[chan] + " \n");break; //TODO exception list
+		case RPL_INVITELIST : send_reply(s, c, m.getContent()[chan] + " \n");break; //TODO invite list
+		//case RPL_USERHOST  : send_reply(s, c, c._nickname + " = " + c._hostname + "\n");break;
+		//case RPL_ISON  : send_reply(s, c, "");break;
+		//case RPL_AWAY  : send_reply(s, c, "");break;
+		//case RPL_UNAWAY  : send_reply(s, c, "");break;
+		//case RPL_NOWAWAY  : send_reply(s, c, "");break;
+		//case RPL_WHOISUSER  : send_reply(s, c, "");break;
+		//case RPL_WHOISSERVER  : send_reply(s, c, "");break;
+		case RPL_WHOISOPERATOR  : send_reply(s, c, "");break;
+		case RPL_WHOISIDLE  : send_reply(s, c, "");break;
+		case RPL_ENDOFWHOIS  : send_reply(s, c, "");break;
+		case RPL_WHOISCHANNELS  : send_reply(s, c, "");break;
+		case RPL_WHOWASUSER  : send_reply(s, c, "");break;
+		case RPL_ENDOFWHOWAS  : send_reply(s, c, "");break;
+		case RPL_LISTSTART  : send_reply(s, c, "");break;
+		case RPL_LIST  : send_reply(s, c, "");break;
+		case RPL_LISTEND  : send_reply(s, c, "");break;
+		case RPL_CHANNELMODEIS  : send_reply(s, c, m.getContent()[chan] + " " + m.getContent()[1] + " " + m.getContent()[2] + "\n");break;
+		case RPL_NOTOPIC  : send_reply(s, c, m.getContent()[chan] + " :No topic is set\n");break;
+		case RPL_TOPIC  : send_reply(s, c, m.getContent()[chan] + " :" + "\n");break; //TODO gettopic
+		case RPL_INVITING  : send_reply(s, c, "");break;
+		case RPL_SUMMONING  : send_reply(s, c, "");break;
+		case RPL_VERSION  : send_reply(s, c, "");break;
+		case RPL_WHOREPLY  : send_reply(s, c, "");break;
+		case RPL_ENDOFWHO  : send_reply(s, c, "");break;
+		case RPL_NAMREPLY  : send_reply(s, c, "");break;
+		case RPL_ENDOFNAMES  : send_reply(s, c, "");break;
+		case RPL_LINKS  : send_reply(s, c, "");break;
+		case RPL_ENDOFLINKS  : send_reply(s, c, "");break;
+		case RPL_BANLIST  : send_reply(s, c, m.getContent()[chan] + "");break; //TODO ban mask
+		case RPL_ENDOFBANLIST  : send_reply(s, c, "");break;
+		case RPL_INFO  : send_reply(s, c, "");break;
+		case RPL_ENDOFINFO  : send_reply(s, c, "");break;
+		case RPL_MOTDSTART  : send_reply(s, c, "");break;
+		case RPL_MOTD  : send_reply(s, c, "");break;
+		case RPL_ENDOFMOTD  : send_reply(s, c, "");break;
+		case RPL_YOUREOPER  : send_reply(s, c, "");break;
+		case RPL_REHASHING  : send_reply(s, c, "");break;
+		case RPL_TIME  : send_reply(s, c, "");break;
+		case RPL_USERSSTART  : send_reply(s, c, "");break;
+		case RPL_USERS  : send_reply(s, c, "");break;
+		case RPL_ENDOFUSERS  : send_reply(s, c, "");break;
+		case RPL_NOUSERS  : send_reply(s, c, "");break;
+		case RPL_TRACELINK  : send_reply(s, c, "");break;
+		case RPL_TRACECONNECTING  : send_reply(s, c, "");break;
+		case RPL_TRACEHANDSHAKE  : send_reply(s, c, "");break;
+		case RPL_TRACEUNKNOWN  : send_reply(s, c, "");break;
+		case RPL_TRACEOPERATOR  : send_reply(s, c, "");break;
+		case RPL_TRACEUSER  : send_reply(s, c, "");break;
+		case RPL_TRACESERVER  : send_reply(s, c, "");break;
+		case RPL_TRACENEWTYPE  : send_reply(s, c, "");break;
+		case RPL_TRACELOG  : send_reply(s, c, "");break;
+		case RPL_STATSLINKINFO  : send_reply(s, c, "");break;
+		case RPL_STATSCOMMANDS  : send_reply(s, c, "");break;
+		case RPL_STATSCLINE  : send_reply(s, c, "");break;
+		case RPL_STATSNLINE  : send_reply(s, c, "");break;
+		case RPL_STATSILINE  : send_reply(s, c, "");break;
+		case RPL_STATSKLINE  : send_reply(s, c, "");break;
+		case RPL_STATSYLINE  : send_reply(s, c, "");break;
+		case RPL_ENDOFSTATS  : send_reply(s, c, "");break;
+		case RPL_STATSLLINE  : send_reply(s, c, "");break;
+		case RPL_STATSUPTIME  : send_reply(s, c, "");break;
+		case RPL_STATSOLINE  : send_reply(s, c, "");break;
+		case RPL_STATSHLINE  : send_reply(s, c, "");break;
+		//case RPL_UMODEIS  : send_reply(s, c, "");break;
+		//case RPL_LUSERCLIENT  : send_reply(s, c, "");break;
+		//case RPL_LUSEROP  : send_reply(s, c, "");break;
+		//case RPL_LUSERUNKNOWN  : send_reply(s, c, "");break;
+		//case RPL_LUSERCHANNELS  : send_reply(s, c, "");break;
+		//case RPL_LUSERME  : send_reply(s, c, "");break;
+		//case RPL_ADMINME  : send_reply(s, c, "");break;
+		//case RPL_ADMINLOC1  : send_reply(s, c, "");break;
+		//case RPL_ADMINLOC2  : send_reply(s, c, "");break;
+		//case RPL_ADMINEMAIL  : send_reply(s, c, "");break;
 		default: ;
 	}
 }
