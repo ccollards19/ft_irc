@@ -28,9 +28,10 @@ struct channel
 	struct client *_creator;
 	std::vector<struct client *> _members;
 	std::vector<struct client *> _operators;
-	std::string _mode;
+	std::vector<char>	_mode;
 	std::string _name;
 	std::string _topic;
+	std::vector<std::string>	_invited;
 };
 
 struct client
@@ -45,6 +46,7 @@ struct client
 	std::string _servername;
 	std::string _realname;
 	std::string _mode;
+	bool		_isRegistered;
 	//buffers
 	std::string _send_buffer;
 	std::string _receive_buffer;
@@ -54,6 +56,7 @@ struct server
 {
 	//general
 	std::string _servername;
+	std::string _password;
 	std::map<int, client *>	_connections;
 	std::map<std::string, client *>	_nick_map;
 	std::vector<channel *> _chan_list;
@@ -117,7 +120,7 @@ void server::server_admin()
 		free(buffer);
 		safe_shutdown(EXIT_FAILURE);
 	}
-  if (std::string(buffer).compare("QUIT") == 0)
+  if (std::string(buffer).compare("QUIT\n") == 0)
   {
 	  free(buffer); 
     safe_shutdown(EXIT_SUCCESS);
@@ -318,6 +321,7 @@ void server::run()
 
 void server::init(char **argv)
 {
+  _password.append(argv[2]);
 	//define the "name" assigned to the server socket
 	struct sockaddr_in tmp; 
 	tmp.sin_family = AF_INET;
@@ -359,9 +363,9 @@ void server::init(char **argv)
 
 int main(int argc, char **argv)
 {
-	if (argc != 2)
+	if (argc != 3)
 	{
-		std::cerr<<"usage: ./ft_irc [port]"<<std::endl;
+		std::cerr<<"usage: ./ft_irc [port] [password]"<<std::endl;
 		return (EXIT_FAILURE);
 	}
 	server server;
