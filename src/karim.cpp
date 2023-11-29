@@ -1,6 +1,6 @@
 #include "main.cpp"
 
-const std::string& Client::getNickname() const
+const std::string& client::getNickname() const
 {
 	return (_nickname);
 }
@@ -67,6 +67,42 @@ int server::USER(Message &m, client &client){
     return 0;
 }
 
+//                  OPER
+
+int server::OPER(Message &m, client &client) {
+    std::vector<std::string> params = m.getContent();
+    if (params.size() < 3)
+        return (ERR_NEEDMOREPARAMS);
+    std::string password = params.at(2);
+    if (this->_oper_pswd != password)
+        return (ERR_PASSWDMISMATCH);
+    else {
+        client::_is_oper = true;
+        return (RPL_YOUREOPER);
+    }
+}
+
+//                  KILL
+
+int server::KILL(Message &m, client &client) {
+    std::vector<std::string> params = m.getContent();
+    int i = 0;
+    int check = 0;
+    if (client::_is_oper == false)
+        return (ERR_NOPRIVILEGES);
+    if (params.size() < 2)
+        return (ERR_NEEDMOREPARAMS);
+    for (i = 0; i < _nick_map.size(); i++) {
+        if (params.at(1) == _nick_map.at(i).getNickname()) {
+            check = 1;
+            break ;
+        }
+    }
+    if (check == 0)
+        return (ERR_NOSUCHNICK);
+    server::close_connection(_nick_map.at(i));
+}
+
 //                  MODE
 
 int server::MODE(Message &m, client &client){
@@ -75,7 +111,7 @@ int server::MODE(Message &m, client &client){
 
 //                  Join
 
-void	channel::removeInvited(Client client) {
+void	channel::removeInvited(client client) {
 	for (std::vector<std::string>::iterator it = _invited.begin(); it != _invited.end(); ++it) {
 		if (*it == client.getNickname()) {
 			_invited.erase(it);
@@ -84,7 +120,7 @@ void	channel::removeInvited(Client client) {
 	}
 }
 
-void channel::addClient(Client client) {
+void channel::addClient(client client) {
 	_members.push_back(client);
 }
 
@@ -106,7 +142,7 @@ std::vector<channel>::iterator	Server::getChannel(std::string channelName) {
 	return (_channels.end());
 }
 
-bool	server::checkChannel(std::string channelName, Client &client){
+bool	server::checkChannel(std::string channelName, client &client){
 	std::vector<channel>::iterator it;
 	for(it = server::_chan_list.begin(); it != server::_chan_list.end(); ++it) {
 		if (it->_name == channelName) {
@@ -119,7 +155,7 @@ bool	server::checkChannel(std::string channelName, Client &client){
 }
 
 int server::createChannel(string channelName, client &client){
-    Channel newChannel(channelName, client);
+    Channel newChannel(channelName, client);// A coder
     server::_chan_list.pushback(channelName);
     // Message à print. Pas sur de ce que c'est
 }

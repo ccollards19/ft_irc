@@ -50,6 +50,7 @@ struct client
 	//buffers
 	std::string _send_buffer;
 	std::string _receive_buffer;
+	bool		_is_oper;
 };
 
 struct server
@@ -60,6 +61,7 @@ struct server
 	std::map<int, client *>	_connections;
 	std::map<std::string, client *>	_nick_map;
 	std::vector<channel *> _chan_list;
+	std::string	_oper_pswd;// Need to be set
 	//socket related
 	struct sockaddr		_sock_addr;
 	socklen_t		_socklen;
