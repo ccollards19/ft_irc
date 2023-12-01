@@ -1,53 +1,4 @@
-#include <cstddef>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/event.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctime>
-#include <unistd.h>
-#include <iostream>
-#include <string>
-#include <map>
-#include <cmath>
-#include <vector>
-enum cmd
-{
-	NONE,
-	KICK,
-	INVITE,
-	TOPIC,
-	MODE,
-	NICK,
-	PRIVMSG,
-	JOIN,
-	PING
-};
-class Message
-{
-	std::vector<std::string> _content;
-	cmd _command;
-	std::string _nick;
-	std::string _user;
-	std::string _host;
-public:
-	Message(std::string &msg, std::map<std::string, int> commands);
-	bool isCommand(){return _command;};
-	std::string getNick(){return _nick;};
-	std::string getUser(){return _user;};
-	std::string getHost(){return _host;};
-	int getCommand(){return _command;};
-	std::vector<std::string> getContent(){return _content;};
-	std::string getCommandName();
-	~Message(){};
-
-};
+#include "irc.hpp"
 
 std::string Message::getCommandName() {
 	switch (_command) {
@@ -59,14 +10,15 @@ std::string Message::getCommandName() {
 		case JOIN:return "JOIN";
 		case PING:return "PING";
 		case NICK:return "NICK";
+		case BAN:return "BAN";
 		default: return "";
 	}
 }
 Message::Message(std::string &msg, std::map<std::string, int> commands) {
-	int pos;
+	size_t pos;
 
 	pos = msg.find(" ");
-	pos == 0xffffffffffffffff ? pos = msg.size() : pos = pos;
+	if (msg.find(" ") == std::string::npos) {pos = msg.size();}
 	std::string fword = msg.substr(0, pos);
 	//check if it is a prefix and setup the next word as the first word
 	if (fword.size() && toascii(fword.at(0)) == ':')
@@ -95,37 +47,42 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 		case PRIVMSG : _command = PRIVMSG; break;
 		case JOIN : _command = JOIN; break;
 		case PING : _command = PING; break;
+		case BAN : _command = BAN; break;
 		default: _command = NONE;
 	}
 	if (_command)
 		msg.erase(0, pos + 1);
 	//loop through the content of the message. if a word start with ':' it is considered as one argument
-	while (pos != std::string::npos)
+	while (pos)
 	{
 		if (msg.size() && toascii(msg.at(0)) == ':')
 		{
 			msg.erase(0, 1);
 			_content.push_back(msg);
 			msg.erase(0, msg.size());
+			pos = 0;
 		}
 		else
 		{
 			pos = msg.find(" ");
-			pos == 0xffffffffffffffff ? _content.push_back(msg.substr(0, msg.size())) : _content.push_back(msg.substr(0, pos));
-			pos == 0xffffffffffffffff ? msg.erase(0, msg.size()) : msg.erase(0, pos + 1);
+			bool end = msg.find(" ") == std::string::npos;
+			end ? _content.push_back(msg.substr(0, msg.size())) : _content.push_back(msg.substr(0, pos));
+			end ? msg.erase(0, msg.size()) : msg.erase(0, pos + 1);
+			if (end)
+				pos = 0;
 		}
 
 	}
 
 }
-
+//
 //void display(std::vector<std::string> s)
 //{
 //	std::cout << "[";
 //	std::vector<std::string>::iterator i = s.begin();
 //	while (i != s.end())
 //	{
-//		std::cout << *i++ << "\n";
+//		std::cout << "|" + *i++ + "|" << " + ";
 //	}
 //	std::cout << "]\n";
 //}
@@ -144,7 +101,7 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 //		case PING:std::cout << "PING\n";break;
 //	}
 //}
-
+//
 //int main()
 //{
 //	std::map<std::string, int> cmds;
