@@ -71,6 +71,30 @@ void server::ping()
 	update_timer(tmp->_fd, CLIENT_TTL);
 }
 
+void parse(struct server *s, struct client *c)
+{
+  unsigned long pos;
+  while ((pos = c->_receive_buffer.find('\n')) != std::string::npos)
+  {
+    Message msg = Message(c->_receive_buffer, s->_cmds);
+    c->_receive_buffer.erase(0, pos + 1);
+    switch (msg.getCommand())
+    {
+      // case KICK: s->kill();
+      // case TOPIC: s->topic();
+      // case MODE: s->mode();
+      // case INVITE: s->invite();
+      // case PRIVMSG: s->privmsg();
+      // case JOIN: s->join();
+      // case PING: s->ping();
+      // case NICK: s->nick();
+      // case BAN: s->ban();
+      default:
+        break;
+    }
+  }
+}
+
 void server::receive_message()
 {
 	std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
@@ -96,7 +120,7 @@ void server::receive_message()
 	_connections[_eventlist.ident]->_receive_buffer.append(buffer, _eventlist.data);
 	std::cout<<buffer<<std::endl;//test
 	free(buffer);
-	//parse(this, _connection[_eventlist.ident]);
+	parse(this, _connections[_eventlist.ident]);
 }
 
 void server::send_message()
