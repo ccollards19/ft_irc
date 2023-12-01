@@ -110,6 +110,7 @@ struct server
 	std::map<int, client *>	_connections;
 	std::map<std::string, client *>	_nick_map;
 	std::vector<channel *> _chan_list;
+	std::map<std::string, int> _cmds;
 	//socket related
 	struct sockaddr		_sock_addr;
 	socklen_t		_socklen;
@@ -139,13 +140,13 @@ struct server
 	void			send_message();
 	void			receive_message();
 	void			ping();
-	void PASS(Message &m, struct client *client);
-	void NICK(Message &m, struct client *client);
-	void USER(Message &m, struct client *client);
-	void OPER(Message &m, struct client *client);
-	void KILL(Message &m, struct client *client);
-	void MODE(Message &m, struct client *client);
-	void JOIN(Message &m, struct client *client);
+	void pass(Message &m, struct client *client);
+	void nick(Message &m, struct client *client);
+	void user(Message &m, struct client *client);
+	void oper(Message &m, struct client *client);
+	void kill(Message &m, struct client *client);
+	void mode(Message &m, struct client *client);
+	void join(Message &m, struct client *client);
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
 	bool checkChannel(std::string channelName, client *client);
 	struct channel *createChannel(std::string channelName, struct client *client);

@@ -93,10 +93,10 @@ void server::receive_message()
 		free(buffer);
 		return;
 	}
-	//	_connections[_eventlist.ident]->_receive_buffer.append(buffer, _eventlist.data);
+	_connections[_eventlist.ident]->_receive_buffer.append(buffer, _eventlist.data);
 	std::cout<<buffer<<std::endl;//test
 	free(buffer);
-	//	parse()//TODO
+	//parse(this, _connection[_eventlist.ident]);
 }
 
 void server::send_message()

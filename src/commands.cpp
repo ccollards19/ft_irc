@@ -12,7 +12,7 @@ bool    client::isRegistered(){
 	return (_isRegistered); //must be set at FALSE
 }
 
-void server::PASS(Message &m, struct client *client){
+void server::pass(Message &m, struct client *client){
 	std::vector<std::string> params = m.getContent();
 	if (params.size() < 2)
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
@@ -26,7 +26,7 @@ void server::PASS(Message &m, struct client *client){
 
 //                  NICK
 
-void server::NICK(Message &m, struct client *client){
+void server::nick(Message &m, struct client *client){
 	std::vector<std::string> params = m.getContent();
 	if (params.size() == 0)
 		reply(m, *this, *client, ERR_NONICKNAMEGIVEN);
@@ -44,7 +44,7 @@ void server::NICK(Message &m, struct client *client){
 
 //                  USER
 
-void server::USER(Message &m, client *client){
+void server::user(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
 	std::string realName;
 	if (client->getNickname().empty())
@@ -66,7 +66,7 @@ void server::USER(Message &m, client *client){
 
 //                  OPER
 
-void server::OPER(Message &m, client *client) {
+void server::oper(Message &m, client *client) {
 	std::vector<std::string> params = m.getContent();
 	if (params.size() < 3)
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
@@ -81,7 +81,7 @@ void server::OPER(Message &m, client *client) {
 
 //                  KILL
 
-void server::KILL(Message &m, client *client) {
+void server::kill(Message &m, client *client) {
 	std::vector<std::string> params = m.getContent();
 	int nosuchnick = 0;
 	if (!client->_is_oper)
@@ -98,7 +98,7 @@ void server::KILL(Message &m, client *client) {
 
 //                  MODE
 
-void server::MODE(Message &m, client *client){
+void server::mode(Message &m, client *client){
 	(void)client;
 	(void)m;
 }
@@ -162,7 +162,7 @@ bool channel::isInvited(client *c) {
 	return (std::find(_invite_list.begin(), _invite_list.end(), c) != _invite_list.end());
 }
 
-void server::JOIN(Message &m, client *client){
+void server::join(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
 	std::string channelName = params[0];
 	struct channel *current;
