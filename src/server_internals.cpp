@@ -39,14 +39,17 @@ void server::server_admin()
 	free(buffer);
 }
 
-void server::check_connection(struct client *c);
+void server::check_connection(struct client *c)
 {
   std::cout<<"fd timer "<<c->_fd<<std::endl;//test
   if (c->_ping)
     close_connection(c);
   else
   {
-    c->_send
+    c->_send_buffer.append("ping\n");//TODO
+    c->_ping = 1;
+    write_set(c->_fd);
+    update_timer(c->_fd, CLIENT_TTL);
   }
 }
 

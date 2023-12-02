@@ -141,6 +141,7 @@ struct server
 	void			send_message();
 	void			receive_message();
 	void ping(Message &m, struct client *client);
+	void pong(Message &m, struct client *client);
 	void pass(Message &m, struct client *client);
 	void nick(Message &m, struct client *client);
 	void user(Message &m, struct client *client);
