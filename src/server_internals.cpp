@@ -39,6 +39,17 @@ void server::server_admin()
 	free(buffer);
 }
 
+void server::check_connection(struct client *c);
+{
+  std::cout<<"fd timer "<<c->_fd<<std::endl;//test
+  if (c->_ping)
+    close_connection(c);
+  else
+  {
+    c->_send
+  }
+}
+
 void server::close_connection(client *client)
 {
 	close(client->_fd);
@@ -55,21 +66,6 @@ void server::regular_tasks()
 	//TODO add nick cleaning 
 }
 
-void server::ping()
-{
-  //possiblty replaced by comand::ping(client) or something
-	client *tmp = _connections[_eventlist.ident];
-	std::cout<<"fd timer "<<tmp->_fd<<std::endl;//test
-	if (tmp->_ping && _eventlist.filter == EVFILT_TIMER)
-	{
-		close_connection(tmp);
-		return;
-	}
-	//tmp->_ping = 1;
-	//tmp->send_buffer<TODO prefix<<" PING :"<<_servername<<"\r\n";
-	//write_set(tmp->_fd);
-	update_timer(tmp->_fd, CLIENT_TTL);
-}
 
 void parse(struct server *s, struct client *c)
 {

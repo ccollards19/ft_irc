@@ -128,7 +128,8 @@ struct server
 	void			add_connection();
 	void      regular_tasks();
 	void			safe_shutdown(int exit_code);
-	void			close_connection(client *client);
+	void			check_connection(struct client *client);
+	void			close_connection(struct client *client);
 	//kevent manip
 	void			update_timer(int fd, size_t time);
 	void 			delete_timer(int fd);
@@ -139,7 +140,7 @@ struct server
 	//actions
 	void			send_message();
 	void			receive_message();
-	void			ping();
+	void ping(Message &m, struct client *client);
 	void pass(Message &m, struct client *client);
 	void nick(Message &m, struct client *client);
 	void user(Message &m, struct client *client);

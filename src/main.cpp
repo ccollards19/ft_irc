@@ -31,7 +31,7 @@ void server::run()
 			else if (_eventlist.filter == EVFILT_READ)
 				this->receive_message();
 			else if (_eventlist.filter == EVFILT_TIMER)
-				this->ping();	
+        check_connection(_connections[_eventlist.ident]);
 		}
 	}
 }

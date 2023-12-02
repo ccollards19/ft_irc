@@ -42,6 +42,18 @@ void server::nick(Message &m, struct client *client){
 	}
 }
 
+//                  PING
+void server::ping(Message &m, struct client *client)
+{
+  if ()
+    reply(msg, *this, *client, ERR_NOORIGIN);           
+  if ()
+    reply(msg, *this, *client, ERR_NOSUCHSERVER);
+	client->_ping = 1;
+	// client->send_buffer<TODO prefix<<" PONG :"<<_servername<<"\r\n";
+	write_set(client->_fd);
+	update_timer(client->_fd, CLIENT_TTL);
+}
 //                  USER
 
 void server::user(Message &m, client *client){
