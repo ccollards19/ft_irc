@@ -111,8 +111,22 @@ void server::kill(Message &m, client *client) {
 //                  MODE
 
 void server::mode(Message &m, client *client){
-	(void)client;
-	(void)m;
+	std::vector<std::string> params = m.getContent();
+	std::string modes("aiwroOs");
+	if (params.size() < 3)
+		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+	if (params[0] != client->getNickname())
+		reply(m, *this, *client, ERR_USERSDONTMATCH);
+	if (modes.find(params[1][1]) == std::string::npos)
+		reply(m, *this, *client, ERR_UMODEUNKNOWNFLAG);
+	else if (!((params[1] == "+o" || params[1] == "+O") && !client->_is_oper))
+	{
+		if (params[1][0] == '+' && client->_mode.find(params[1][1]) == std::string::npos)
+			client->_mode += params[1][1];
+		else if (params[1][0] == '-')
+			client->_mode.erase(client->_mode.find(params[1][0]));
+	}
+	reply(m, *this, *client, RPL_UMODEIS);
 }
 
 //                  Join
