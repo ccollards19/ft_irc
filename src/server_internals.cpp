@@ -89,6 +89,7 @@ void parse(struct server *s, struct client *c)
 				  //case PRIVMSG: s->privmsg(msg, c);break;
 			  case JOIN: s->join(msg, c);break;
 				  //case PING: s->ping(msg, c);break;
+				  //case PONG: s->pong(msg, c);break;
 			  case NICK: s->nick(msg, c);break;
 				  //case BAN: s->ban(msg, c);break;
 			  case USER: s->user(msg, c);break;

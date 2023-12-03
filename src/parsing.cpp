@@ -9,6 +9,7 @@ std::string Message::getCommandName() {
 		case PRIVMSG:return "PRIVMSG";
 		case JOIN:return "JOIN";
 		case PING:return "PING";
+		case PONG:return "PONG";
 		case NICK:return "NICK";
 		case BAN:return "BAN";
 		case USER:return "USER";
@@ -59,6 +60,7 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 		case PRIVMSG : _command = PRIVMSG; break;
 		case JOIN : _command = JOIN; break;
 		case PING : _command = PING; break;
+		case PONG : _command = PONG; break;
 		case BAN : _command = BAN; break;
 		case USER : _command = USER;break;
 		default: _command = NONE;

@@ -31,7 +31,7 @@ void server::run()
 			else if (_eventlist.filter == EVFILT_READ)
 				this->receive_message();
 			else if (_eventlist.filter == EVFILT_TIMER)
-        check_connection(_connections[_eventlist.ident]);
+        this->check_connection(_connections[_eventlist.ident]);
 		}
 	}
 }
@@ -49,6 +49,7 @@ void server::init(char **argv)
 	_cmds["PRIVMSG"] = PRIVMSG;
 	_cmds["JOIN"] = JOIN;
 	_cmds["PING"] = PING;
+	_cmds["PONG"] = PONG;
 	_cmds["USER"] = USER;
 	//define the "name" assigned to the server socket
 	struct sockaddr_in tmp; 
