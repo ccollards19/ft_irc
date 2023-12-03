@@ -66,6 +66,7 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 	int chan;
 	int other;
 	m.showContent();
+	std::cout << "RPL = " << error << std::endl;
 	switch (m.getCommand()) {
 		case KICK : nick = 1; server = 0; chan = 0; other = 0;break;
 		case INVITE : nick = 0; server = 0; chan = 1; other = 0;break;
@@ -135,7 +136,7 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 		case RPL_ENDOFBANLIST  : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel ban list\n");break;
 			//case RPL_ENDOFEXCEPTLIST : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel except list\n");break;
 		case RPL_ENDOFINVITELIST : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel invite list\n");break;
-			//case RPL_NAMEREPLY : ;break;
+		case RPL_NAMEREPLY : ;break;
 		case RPL_ENDOFNAMES : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel ban list\n");break;
 		default: ;
 	}

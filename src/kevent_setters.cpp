@@ -20,7 +20,6 @@ void	server::write_set(int fd)
 			<<"error: "<<strerror(errno)<<std::endl;
 		this->safe_shutdown(EXIT_FAILURE);
 	}
-	std::cerr<<"kevent error write_set"<<std::endl<<std::endl;
 }
 
 void	server::read_unset(int fd)

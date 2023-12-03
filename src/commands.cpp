@@ -235,12 +235,14 @@ bool	server::checkChannel(std::string channelName, client *client){
 }
 
 struct channel *server::createChannel(std::string channelName, struct client *client){
-	struct channel newChannel;// A coder
+
 	if (checkChannel(channelName, client))
 		return (*getChannel(channelName));
 	else
 	{
-		_chan_list.push_back(&newChannel);
+		channel *chan = new channel();
+		chan->_name = channelName;
+		_chan_list.push_back(chan);
 		return _chan_list.back();
 	}
 
@@ -253,15 +255,15 @@ bool channel::isInvited(client *c) {
 
 void server::join(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
+	if (params.size() < 1)
+	{
+		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+		return ;
+	}
 	std::string channelName = params[0];
 	struct channel *current;
-	//verif
-	//if 0 params return (ERR_NEEDMOREPARAMS)
-	//if client is registered ? return (ERR_NOTREGISTERED) possible ?
-	//if not in server::_chan_list create new channel
 	if (params[0][0] == '#'){
 		current = createChannel(channelName, client);
-		//chan invite only ?
 		if (!current->isModeSet('i'))
 			reply(m, *this, *client, RPL_TOPIC);
 		else {
@@ -274,4 +276,5 @@ void server::join(Message &m, client *client){
 				reply(m, *this, *client, ERR_INVITEONLYCHAN);
 		}
 	}
+	reply(m, *this, *client, RPL_NAMEREPLY);
 }
