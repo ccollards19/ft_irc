@@ -32,11 +32,9 @@ void server::nick(Message &m, struct client *client){
 		reply(m, *this, *client, ERR_NONICKNAMEGIVEN);
 	if (params.size() > 1)
 		reply(m, *this, *client, ERR_ERRONEUSNICKNAME);
-	try {
-		_nick_map.at(params[0]);
+	if (_nick_map.find(params[0]) != _nick_map.end())
 		reply(m, *this, *client, ERR_NICKNAMEINUSE);
-	}
-	catch (std::exception &e){
+	else {
 		_nick_map[params[0]] = client;
 		client->_nickname = params[0];
 	}
@@ -84,6 +82,10 @@ void server::user(Message &m, client *client){
 			realName += params[i] + " ";
 		//RPL_WELCOME ?
 	}
+	reply(m, *this, *client, RPL_WELCOME);
+	reply(m, *this, *client, RPL_YOURHOST);
+	reply(m, *this, *client, RPL_CREATED);
+	reply(m, *this, *client, RPL_MYINFO);
 }
 
 //                  OPER
