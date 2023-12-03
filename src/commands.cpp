@@ -125,24 +125,75 @@ void server::kill(Message &m, client *client) {
 }
 
 //                  MODE
+bool server::isAchannel(std::string name)
+{
+	std::vector<channel *>::iterator i = _chan_list.begin();
+	for ( ;  (*i)->_name != name && i != _chan_list.end() ; i++) {}
+	return (i != _chan_list.end());
+}
+
+bool client::isChanop(channel *c) {
+	std::vector<client *>::iterator i = c->_operators.begin();
+	for ( ;  (*i) != this && i != c->_operators.end() ; i++) {}
+	return (i != c->_operators.end());
+}
+
+bool client::isMember(channel *c){
+	std::vector<client *>::iterator i = c->_members.begin();
+	for ( ;  (*i) != this && i != c->_members.end() ; i++) {}
+	return (i != c->_members.end());
+}
 
 void server::mode(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
-	std::string modes("aiwroOs");
-	if (params.size() < 3)
-		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-	if (params[0] != client->getNickname())
-		reply(m, *this, *client, ERR_USERSDONTMATCH);
-	if (modes.find(params[1][1]) == std::string::npos)
-		reply(m, *this, *client, ERR_UMODEUNKNOWNFLAG);
-	else if (!((params[1] == "+o" || params[1] == "+O") && !client->_is_oper))
+	std::string modes("airoO");
+
+	if (params[0][1] == '#')//CHANNEL MODE
 	{
-		if (params[1][0] == '+' && client->_mode.find(params[1][1]) == std::string::npos)
-			client->_mode += params[1][1];
-		else if (params[1][0] == '-')
-			client->_mode.erase(client->_mode.find(params[1][0]));
+		channel *c;
+		if (params.size() < 3)
+			reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+		if (!isAchannel(params[0]))
+			reply(m, *this, *client, ERR_NOSUCHCHANNEL);
+		else
+		{
+			c = *getChannel(params[0]);
+			if (!client->isChanop(c))
+				reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+			if (!client->isMember(c))
+				reply(m, *this, *client, ERR_NOSUCHNICK);
+			if (params.size() == 2)
+			{
+				if (params[1][0] == '+')
+					;
+				else if (params[1][0] == '-')
+					;
+				else
+					reply(m, *this, *client, ERR_KEYSET);
+			}
+			else
+			{
+
+			}
+		}
 	}
-	reply(m, *this, *client, RPL_UMODEIS);
+	else//USER MODE
+	{
+		if (params.size() < 2)
+			reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+		if (params[0] != client->getNickname())
+			reply(m, *this, *client, ERR_USERSDONTMATCH);
+		if (modes.find(params[1][1]) == std::string::npos)
+			reply(m, *this, *client, ERR_UMODEUNKNOWNFLAG);
+		else if (!((params[1] == "+o" || params[1] == "+O") && !client->_is_oper))
+		{
+			if (params[1][0] == '+' && client->_mode.find(params[1][1]) == std::string::npos)
+				client->_mode += params[1][1];
+			else if (params[1][0] == '-')
+				client->_mode.erase(client->_mode.find(params[1][0]));
+		}
+		reply(m, *this, *client, RPL_UMODEIS);
+	}
 }
 
 //                  Join

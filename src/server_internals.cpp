@@ -41,7 +41,8 @@ void server::server_admin()
 
 void server::check_connection(struct client *c)
 {
-  std::cout<<"fd timer "<<c->_fd<<std::endl;//test
+	(void)c;
+  /*std::cout<<"fd timer "<<c->_fd<<std::endl;//test
   if (c->_ping)
     close_connection(c);
   else
@@ -50,7 +51,7 @@ void server::check_connection(struct client *c)
     c->_ping = 1;
     write_set(c->_fd);
     update_timer(c->_fd, CLIENT_TTL);
-  }
+  }*/
 }
 
 void server::close_connection(client *client)
@@ -65,33 +66,37 @@ void server::close_connection(client *client)
 
 void server::regular_tasks()
 {
-	std::cout<<"regular tasks"<<std::endl;//test
+	//std::cout<<"regular tasks"<<std::endl;//test
 	//TODO add nick cleaning 
 }
 
 
 void parse(struct server *s, struct client *c)
-{
+{try
+	{
   unsigned long pos;
   while ((pos = c->_receive_buffer.find('\n')) != std::string::npos)
   {
-    Message msg = Message(c->_receive_buffer, s->_cmds);
-    c->_receive_buffer.erase(0, pos + 1);
-    switch (msg.getCommand())
-    {
-      // case KICK: s->kill();
-      // case TOPIC: s->topic();
-      // case MODE: s->mode();
-      // case INVITE: s->invite();
-      // case PRIVMSG: s->privmsg();
-      // case JOIN: s->join();
-      // case PING: s->ping();
-      // case NICK: s->nick();
-      // case BAN: s->ban();
-      default:
-        break;
-    }
-  }
+
+		  Message msg = Message(c->_receive_buffer, s->_cmds);
+		  c->_receive_buffer.erase(0, pos + 1);
+		  switch (msg.getCommand())
+		  {
+			  case KICK: s->kill(msg, c);
+				  //case TOPIC: s->topic(msg, c);
+			  case MODE: s->mode(msg, c);
+				  //case INVITE: s->invite(msg, c);
+				  //case PRIVMSG: s->privmsg(msg, c);
+			  case JOIN: s->join(msg, c);
+				  //case PING: s->ping(msg, c);
+			  case NICK: s->nick(msg, c);
+				  //case BAN: s->ban(msg, c);
+			  default:
+				  break;
+		  }
+	  }
+
+  }catch (std::exception &e){std::cout << e.what() << "\n";}
 }
 
 void server::receive_message()
