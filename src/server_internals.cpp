@@ -57,7 +57,7 @@ void server::check_connection(struct client *c)
 void server::close_connection(client *client)
 {
 	close(client->_fd);
-	delete_timer(client->_fd);
+	//delete_timer(client->_fd);
 	_connections.erase(client->_fd);
 	//_nick_map.erase(client->_nickname);
 	//TODO remove from channels and nick cleaning when implemented
@@ -77,20 +77,22 @@ void parse(struct server *s, struct client *c)
   unsigned long pos;
   while ((pos = c->_receive_buffer.find('\n')) != std::string::npos)
   {
-
+	  	std::cout << "PARSING: "  + c->_receive_buffer << "\n";
 		  Message msg = Message(c->_receive_buffer, s->_cmds);
 		  c->_receive_buffer.erase(0, pos + 1);
+		  std::cout << "command " << msg.getCommand() << "\n";
 		  switch (msg.getCommand())
 		  {
-			  case KICK: s->kill(msg, c);
-				  //case TOPIC: s->topic(msg, c);
-			  case MODE: s->mode(msg, c);
-				  //case INVITE: s->invite(msg, c);
-				  //case PRIVMSG: s->privmsg(msg, c);
-			  case JOIN: s->join(msg, c);
-				  //case PING: s->ping(msg, c);
-			  case NICK: s->nick(msg, c);
-				  //case BAN: s->ban(msg, c);
+			  case KICK: s->kill(msg, c);break;
+				  //case TOPIC: s->topic(msg, c);break;
+			  case MODE: s->mode(msg, c);break;
+				  //case INVITE: s->invite(msg, c);break;
+				  //case PRIVMSG: s->privmsg(msg, c);break;
+			  case JOIN: s->join(msg, c);break;
+				  //case PING: s->ping(msg, c);break;
+			  case NICK: s->nick(msg, c);break;
+				  //case BAN: s->ban(msg, c);break;
+			  case USER: s->user(msg, c);break;
 			  default:
 				  break;
 		  }

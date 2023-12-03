@@ -34,7 +34,8 @@ enum cmds
 	PRIVMSG,
 	JOIN,
 	PING,
-	BAN
+	BAN,
+	USER
 };
 
 class Message
@@ -54,6 +55,7 @@ public:
 	std::vector<std::string> getContent(){return _content;};
 	std::string getCommandName();
 	~Message(){};
+	void showContent();
 
 };
 struct client;

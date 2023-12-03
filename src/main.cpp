@@ -49,6 +49,7 @@ void server::init(char **argv)
 	_cmds["PRIVMSG"] = PRIVMSG;
 	_cmds["JOIN"] = JOIN;
 	_cmds["PING"] = PING;
+	_cmds["USER"] = USER;
 	//define the "name" assigned to the server socket
 	struct sockaddr_in tmp; 
 	tmp.sin_family = AF_INET;

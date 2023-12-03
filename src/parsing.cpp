@@ -11,8 +11,20 @@ std::string Message::getCommandName() {
 		case PING:return "PING";
 		case NICK:return "NICK";
 		case BAN:return "BAN";
+		case USER:return "USER";
 		default: return "";
 	}
+}
+
+void Message::showContent()
+{
+	std::cout << "Message content:\n";
+	std::vector<std::string>::iterator i = _content.begin();
+	for (; i != _content.end() ; ++i) {
+		std::cout << "[" + *i + "]" << " ";
+	}
+	std::cout << std::endl;
+
 }
 Message::Message(std::string &msg, std::map<std::string, int> commands) {
 	size_t pos;
@@ -48,6 +60,7 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 		case JOIN : _command = JOIN; break;
 		case PING : _command = PING; break;
 		case BAN : _command = BAN; break;
+		case USER : _command = USER;break;
 		default: _command = NONE;
 	}
 	if (_command)
