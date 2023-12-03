@@ -34,6 +34,7 @@ enum cmds
 	PRIVMSG,
 	JOIN,
 	PING,
+	PONG,
 	BAN,
 	USER
 };

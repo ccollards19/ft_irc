@@ -47,11 +47,7 @@ void server::ping(Message &m, struct client *client)
   if (params.size() > 1)
     reply(m, *this, *client, ERR_NOSUCHSERVER);
   else
-  {
-    client->_ping = 1;
-	  client->_send_buffer.append("PONG \n");
-	  write_set(client->_fd);
-  }
+	  send_reply(*this, *client, "PONG \n");
 	update_timer(client->_fd, CLIENT_TTL);
 }
 
@@ -62,10 +58,8 @@ void server::pong(Message &m, struct client *client)//TODO
   if (params.size() > 1)
     reply(m, *this, *client, ERR_NOSUCHSERVER);
   else
-  {
     client->_ping = 0;
-    update_timer(client->_fd, CLIENT_TTL);
-  }
+  update_timer(client->_fd, CLIENT_TTL);
 }
 
 //                  USER

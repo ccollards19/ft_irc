@@ -47,7 +47,7 @@ void server::check_connection(struct client *c)
     close_connection(c);
   else
   {
-    c->_send_buffer.append("ping\n");//TODO
+    c->_send_buffer.append("PING\n");
     c->_ping = 1;
     write_set(c->_fd);
     update_timer(c->_fd, CLIENT_TTL);
@@ -57,7 +57,6 @@ void server::check_connection(struct client *c)
 void server::close_connection(client *client)
 {
 	close(client->_fd);
-	//delete_timer(client->_fd);
 	_connections.erase(client->_fd);
 	//_nick_map.erase(client->_nickname);
 	//TODO remove from channels and nick cleaning when implemented
@@ -90,6 +89,7 @@ void parse(struct server *s, struct client *c)
 				  //case PRIVMSG: s->privmsg(msg, c);break;
 			  case JOIN: s->join(msg, c);break;
 				  //case PING: s->ping(msg, c);break;
+				  //case PONG: s->pong(msg, c);break;
 			  case NICK: s->nick(msg, c);break;
 				  //case BAN: s->ban(msg, c);break;
 			  case USER: s->user(msg, c);break;
