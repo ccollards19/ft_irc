@@ -77,6 +77,7 @@ struct channel
 	void removeInvited(struct client *client);
 	void addClient(client *client);
 	bool isModeSet(char mode);
+
 };
 
 struct client
@@ -98,7 +99,8 @@ struct client
 	std::string _receive_buffer;
 	const std::string& getNickname() const;
 	bool    isRegistered();
-
+	bool isChanop(channel *c);
+	bool isMember(channel *c);
 };
 
 struct server
@@ -149,6 +151,7 @@ struct server
 	void kill(Message &m, struct client *client);
 	void mode(Message &m, struct client *client);
 	void join(Message &m, struct client *client);
+	bool isAchannel(std::string name);
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
 	bool checkChannel(std::string channelName, client *client);
 	struct channel *createChannel(std::string channelName, struct client *client);
