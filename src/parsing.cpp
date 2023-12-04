@@ -27,7 +27,7 @@ void Message::showContent()
 	std::cout << std::endl;
 
 }
-Message::Message(std::string &msg, std::map<std::string, int> commands) {
+Message::Message(std::string msg, std::map<std::string, int> commands) {
 	size_t pos;
 
 	pos = msg.find(" ");

@@ -47,7 +47,7 @@ class Message
 	std::string _user;
 	std::string _host;
 public:
-	Message(std::string &msg, std::map<std::string, int> commands);
+	Message(std::string msg, std::map<std::string, int> commands);
 	bool isCommand(){return _command;};
 	std::string getNick(){return _nick;};
 	std::string getUser(){return _user;};
