@@ -14,7 +14,7 @@ void server::safe_shutdown(int exit_code)
 // read the standard output and process commands only quits
 void server::server_admin()
 {
-  std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
+  //std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
 	if ((size_t)_eventlist.data == 0)
     safe_shutdown(EXIT_SUCCESS);
 	char *buffer = (char *)malloc(sizeof(char) * ((size_t)_eventlist.data) + 1);
@@ -105,7 +105,7 @@ void parse(struct server *s, struct client *c)
 
 void server::receive_message()
 {
-	std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
+	//std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
 	if ((size_t)_eventlist.data == 0)
 	{
 		if ((_eventlist.flags & EV_EOF) == EV_EOF)
@@ -115,8 +115,8 @@ void server::receive_message()
 	char *buffer = (char *)malloc(sizeof(char) * (size_t)_eventlist.data);
 	if (buffer == NULL)
 	{
-		std::cerr<<"malloc error"<<std::endl
-			<<"error: "<<strerror(errno)<<std::endl;
+		//std::cerr<<"malloc error"<<std::endl
+		//	<<"error: "<<strerror(errno)<<std::endl;
 		safe_shutdown(EXIT_FAILURE);
 	}
 	size_t nbyte = recv(_eventlist.ident, buffer, (size_t)_eventlist.data, 0);
@@ -126,7 +126,7 @@ void server::receive_message()
 		return;
 	}
 	_connections[_eventlist.ident]->_receive_buffer.append(buffer, _eventlist.data);
-	std::cout<<buffer<<std::endl;//test
+	//std::cout<<buffer<<std::endl;//test
 	free(buffer);
 	parse(this, _connections[_eventlist.ident]);
 }
