@@ -1,20 +1,30 @@
 #include "irc.hpp"
+#include <iostream>
+#include <iterator>
+#include <map>
 
 //to be expanded as needed
 void server::safe_shutdown(int exit_code)
 {	
+  std::cout<<"||||||||||SHUTDOWN||||||||||"<<std::endl;
 	if (_socketfd) 
 		close(_socketfd);
 	if (_kq) 
-		close(_kq);
-	//TODO
+    close(_kq);
+  std::map<int, client *>::iterator end = _connections.end();
+  for (std::map<int, client *>::iterator it = _connections.begin(); it != end; it++)
+  {
+    close(it->second->_fd);
+    delete (it->second);
+  }
 	exit(exit_code);
 }
 
 // read the standard output and process commands only quits
 void server::server_admin()
 {
-  //std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
+  std::cout<<"||||||||||SERVADMN||||||||||"<<std::endl;
+  std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
 	if ((size_t)_eventlist.data == 0)
     safe_shutdown(EXIT_SUCCESS);
 	char *buffer = (char *)malloc(sizeof(char) * ((size_t)_eventlist.data) + 1);
@@ -58,6 +68,7 @@ void server::close_connection(client *client)
 {
 	close(client->_fd);
 	_connections.erase(client->_fd);
+  delete client;
 	//_nick_map.erase(client->_nickname);
 	//TODO remove from channels and nick cleaning when implemented
 	delete client;
@@ -82,7 +93,7 @@ void parse(struct server *s, struct client *c)
       // std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
       c->_receive_buffer.erase(0, (pos + 1));
       // std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
-      std::cout << "command :" << msg.getCommandName() << "\n";
+      // std::cout << "command :" << msg.getCommandName() << "\n";
       switch (msg.getCommand())
       {
         case KICK: s->kill(msg, c);break;
@@ -105,7 +116,8 @@ void parse(struct server *s, struct client *c)
 
 void server::receive_message()
 {
-	//std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
+  std::cout<<"||||||||||RECVDATA||||||||||"<<std::endl;
+	std::cout<<(size_t)_eventlist.data<<" bytes received on fd : "<<_eventlist.ident<<std::endl;//test
 	if ((size_t)_eventlist.data == 0)
 	{
 		if ((_eventlist.flags & EV_EOF) == EV_EOF)
@@ -115,8 +127,8 @@ void server::receive_message()
 	char *buffer = (char *)malloc(sizeof(char) * (size_t)_eventlist.data);
 	if (buffer == NULL)
 	{
-		//std::cerr<<"malloc error"<<std::endl
-		//	<<"error: "<<strerror(errno)<<std::endl;
+		std::cerr<<"malloc error"<<std::endl
+		<<"error: "<<strerror(errno)<<std::endl;
 		safe_shutdown(EXIT_FAILURE);
 	}
 	size_t nbyte = recv(_eventlist.ident, buffer, (size_t)_eventlist.data, 0);
@@ -126,7 +138,7 @@ void server::receive_message()
 		return;
 	}
 	_connections[_eventlist.ident]->_receive_buffer.append(buffer, _eventlist.data);
-	//std::cout<<buffer<<std::endl;//test
+	std::cout<<buffer<<std::endl;//test
 	free(buffer);
 	parse(this, _connections[_eventlist.ident]);
 }
@@ -134,7 +146,9 @@ void server::receive_message()
 void server::send_message()
 {
 	client *tmp = _connections[_eventlist.ident];
+  std::cout<<"||||||||||SENDDATA||||||||||"<<std::endl;
 	std::cout<<"sent message on fd : "<<tmp->_fd<<std::endl;//test
+	std::cout<<tmp->_send_buffer<<std::endl;//test
 	int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(), tmp->_send_buffer.size(), 0);
 	if (nbyte < 0) // EAGAIN should have been used here but the subject does not allow for it 
 		return;
@@ -147,6 +161,7 @@ void server::send_message()
 // add a client (not a user yet)
 void server::add_connection()
 {
+  std::cout<<"||||||||||NEWCNCTN||||||||||"<<std::endl;
 	std::cout<<"new connection"<<std::endl;//test
 	int newfd  = accept(_socketfd, &(_sock_addr), &(_socklen));
 	if (newfd == -1)

@@ -66,8 +66,8 @@ void server::init(char **argv)
 	//create the server socket and bind it
 	if (((_socketfd = socket(PF_INET, SOCK_STREAM, 0)) == -1)\
 			|| (fcntl(_socketfd, F_SETFL, O_NONBLOCK) == -1)\
-			|| (bind(_socketfd, &(_sock_addr), sizeof(_sock_addr)) == -1)\
-			|| (listen(_socketfd, 1) == -1))
+			|| (bind(_socketfd, &(_sock_addr), sizeof(_sock_addr)) == -1 && printf("bind\n"))\
+			|| (listen(_socketfd, 1) == -1 && printf("listen\n")))
 	{
 		std::cerr<<"socket error durring server startup "<<std::endl
 			<<"error: "<<strerror(errno)<<std::endl;
