@@ -280,18 +280,18 @@ void server::join(Message &m, client *client){
 				joinMessage(current, client);
 				current->_members.push_back(client);
 			}
-			reply(m, *this, *client, RPL_TOPIC);
+			topic(m, client);
+			//reply(m, *this, *client, RPL_TOPIC);
 		}
-		else {
-			if (current->isInvited(client))
-			{
-				current->_members.push_back(client);
-				reply(m, *this, *client, RPL_TOPIC);
-				current->removeInvited(client);
-			}
-			else
+		else if (current->isInvited(client))
+		{
+			current->_members.push_back(client);
+			topic(m, client);
+			//reply(m, *this, *client, RPL_TOPIC);
+			current->removeInvited(client);
+		}
+		else
 				reply(m, *this, *client, ERR_INVITEONLYCHAN);
-		}
 		reply(m, *this, *client, RPL_NAMREPLY);
 		reply(m, *this, *client, RPL_ENDOFNAMES);
 		send_reply(*this, *client, ":" + _servername + " JOIN " + current->_name + "\n");
