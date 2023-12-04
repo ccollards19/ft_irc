@@ -36,6 +36,7 @@ enum cmds
 	PING,
 	PONG,
 	BAN,
+	PASS,
 	USER
 };
 
