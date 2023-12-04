@@ -157,7 +157,7 @@ struct server
 	void topic(Message &m, struct client *client);
 	bool isAchannel(std::string name);
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
-	bool checkChannel(std::string channelName, client *client);
+	bool checkChannel(std::string channelName);
 	struct channel *createChannel(std::string channelName, struct client *client);
 	void joinMessage(channel *target, client *c);
 };

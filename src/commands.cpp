@@ -222,12 +222,10 @@ std::vector<struct channel*>::iterator	server::getChannel(std::string channelNam
 	return (_chan_list.end());
 }
 
-bool	server::checkChannel(std::string channelName, client *client){
+bool	server::checkChannel(std::string channelName){
 	std::vector<channel *>::iterator it;
 	for(it = server::_chan_list.begin(); it != server::_chan_list.end(); ++it) {
 		if ((*it)->_name == channelName) {
-			if (!(*it)->isModeSet('i'))
-				(*it)->addClient(client);
 			return (true);
 		}
 	}
@@ -236,7 +234,7 @@ bool	server::checkChannel(std::string channelName, client *client){
 
 struct channel *server::createChannel(std::string channelName, struct client *client){
 
-	if (checkChannel(channelName, client))
+	if (checkChannel(channelName))
 		return (*getChannel(channelName));
 	else
 	{
@@ -260,7 +258,7 @@ bool channel::isInvited(client *c) {
 void server::joinMessage(channel *target, client *c)
 {
 	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
-		send_reply(*this, **it, ":" + c->_nickname + "JOIN" + target->_name + "\n");
+		send_reply(*this, **it, ":" + _servername + " :" + c->_nickname + "JOIN" + target->_name + "\n");
 	}
 }
 void server::join(Message &m, client *client){
