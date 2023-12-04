@@ -20,8 +20,8 @@
 #include <vector>
 #include "errors.hpp"
 
-#define SERV_NAME "test"
-#define CLIENT_TTL 10000
+#define SERVNAME "irc.ircserv.test"
+#define CLIENT_TTL 50000
 #define REG_TASK_TIMER 5000
 enum cmds
 {

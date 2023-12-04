@@ -39,6 +39,7 @@ void server::run()
 void server::init(char **argv)
 {
 	_password.append(argv[2]);
+  _servername = SERVNAME;
 	std::time_t tmp_time = std::time(nullptr);
 	_creation_date.append(std::asctime(std::localtime(&tmp_time)));
 	_cmds["KICK"] = KICK;
