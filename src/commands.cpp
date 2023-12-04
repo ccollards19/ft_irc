@@ -296,7 +296,7 @@ void server::join(Message &m, client *client){
 		}
 		reply(m, *this, *client, RPL_NAMREPLY);
 		reply(m, *this, *client, RPL_ENDOFNAMES);
-		send_reply(*this, *client, "JOIN " + current->_name + "\n");
+		send_reply(*this, *client, ":" + _servername + " JOIN " + current->_name + "\n");
 		//332 your_nick #chan :Welcome to #chan!
 		//send_reply(*this, *client, "332 " + client->_nickname + " " + current->_name + " :Welcome to " + current->_name + "!\n");
 		//send_reply(*this, *client, ":" + client->_nickname + client->_username + " JOIN " + ":" + current->_name);
