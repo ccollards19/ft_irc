@@ -154,10 +154,12 @@ struct server
 	void kill(Message &m, struct client *client);
 	void mode(Message &m, struct client *client);
 	void join(Message &m, struct client *client);
+	void topic(Message &m, struct client *client);
 	bool isAchannel(std::string name);
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
 	bool checkChannel(std::string channelName, client *client);
 	struct channel *createChannel(std::string channelName, struct client *client);
+	void joinMessage(channel *target, client *c);
 };
 
 

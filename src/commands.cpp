@@ -124,7 +124,7 @@ void server::kill(Message &m, client *client) {
 bool server::isAchannel(std::string name)
 {
 	std::vector<channel *>::iterator i = _chan_list.begin();
-	for ( ;  (*i)->_name != name && i != _chan_list.end() ; i++) {}
+	for ( ;  i != _chan_list.end() && (*i)->_name != name && i != _chan_list.end() ; ++i) {}
 	return (i != _chan_list.end());
 }
 
@@ -242,6 +242,10 @@ struct channel *server::createChannel(std::string channelName, struct client *cl
 	{
 		channel *chan = new channel();
 		chan->_name = channelName;
+		chan->_operators.push_back(client);
+		chan->_creator = client;
+		chan->_prefix = '#';
+		chan->_chan_id = channelName;
 		_chan_list.push_back(chan);
 		return _chan_list.back();
 	}
@@ -253,6 +257,12 @@ bool channel::isInvited(client *c) {
 	return (std::find(_invite_list.begin(), _invite_list.end(), c) != _invite_list.end());
 }
 
+void server::joinMessage(channel *target, client *c)
+{
+	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
+		send_reply(*this, **it, ":" + c->_nickname + "JOIN" + target->_name + "\n");
+	}
+}
 void server::join(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
 	if (params.size() < 1)
@@ -265,16 +275,68 @@ void server::join(Message &m, client *client){
 	if (params[0][0] == '#'){
 		current = createChannel(channelName, client);
 		if (!current->isModeSet('i'))
+		{
+			if (std::find(current->_members.begin(), current->_members.end(), client) == current->_members.end())
+			{
+				std::cout << current->_name << " has no member named " << client->getNickname() << " yet\n";
+				joinMessage(current, client);
+				current->_members.push_back(client);
+			}
 			reply(m, *this, *client, RPL_TOPIC);
+		}
 		else {
-			if (current->isInvited(client)) {
-				//itChannel->addClient(client); A coder
+			if (current->isInvited(client))
+			{
+				current->_members.push_back(client);
+				reply(m, *this, *client, RPL_TOPIC);
 				current->removeInvited(client);
-				//rpl_Join(client, *itChannel); Commande à créer ou fonction de Nico gère ?
 			}
 			else
 				reply(m, *this, *client, ERR_INVITEONLYCHAN);
 		}
+		reply(m, *this, *client, RPL_NAMREPLY);
+		reply(m, *this, *client, RPL_ENDOFNAMES);
+		send_reply(*this, *client, "JOIN " + current->_name + "\n");
+		//332 your_nick #chan :Welcome to #chan!
+		//send_reply(*this, *client, "332 " + client->_nickname + " " + current->_name + " :Welcome to " + current->_name + "!\n");
+		//send_reply(*this, *client, ":" + client->_nickname + client->_username + " JOIN " + ":" + current->_name);
 	}
-	reply(m, *this, *client, RPL_NAMEREPLY);
+	else if (params[0][0] == '0')//leave all channels
+	{
+		for(std::vector<channel *>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it)
+		{
+			if (client->isMember(*it))
+				(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), client));
+		}
+	}
+
+}
+
+void server::topic(Message &m, client *client)
+{
+	std::vector<std::string> params = m.getContent();
+
+	if (params.size() < 1)
+	{
+		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+		return ;
+	}
+	if (isAchannel(params[0]))
+	{
+		channel *current = *getChannel(params[0]);
+		if (params.size() == 1)
+		{
+			if (current->_topic.empty())
+				reply(m, *this, *client, RPL_NOTOPIC);
+			else
+				reply(m, *this, *client, RPL_TOPIC);
+
+		}
+		else if (client->isChanop(current))
+			current->_topic = params[1];
+		else
+			reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+	}
+	else
+		reply(m, *this, *client, ERR_NOSUCHCHANNEL);
 }

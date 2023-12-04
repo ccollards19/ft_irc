@@ -59,13 +59,26 @@ std::string to_string(int error)
 		res = "0" + res;
 	return res;
 }
+
+std::string getNameList(Message m, server &s)
+{
+	std::string res;
+	channel *chan = get_channel(s, m.getContent()[0]);
+	std::vector<client *>::iterator it = chan->_members.begin();
+	for (; it != chan->_members.end() ; ++it) {
+		res += (*it)->_nickname;
+		res += " ";
+	}
+	return res;
+}
+
 void reply(Message &m, struct server &s, struct client &c, int error)
 {
 	int nick;
 	int server;
 	int chan;
 	int other;
-	m.showContent();
+	//m.showContent();
 	std::cout << "RPL = " << error << std::endl;
 	switch (m.getCommand()) {
 		case KICK : nick = 1; server = 0; chan = 0; other = 0;break;
@@ -135,9 +148,9 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 		case RPL_BANLIST  : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + get_mask_list(s, m.getContent()[chan], 'b'));break;
 		case RPL_ENDOFBANLIST  : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel ban list\n");break;
 			//case RPL_ENDOFEXCEPTLIST : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel except list\n");break;
-		case RPL_ENDOFINVITELIST : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel invite list\n");break;
-		case RPL_NAMEREPLY : ;break;
-		case RPL_ENDOFNAMES : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel ban list\n");break;
+		case RPL_NAMREPLY : send_reply(s, c, to_string(error) + + " " +c._nickname + " = " + m.getContent()[chan] + " : "+ getNameList(m, s) +"\n");break;
+		case RPL_ENDOFINVITELIST : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel invite list.\n");break;
+		case RPL_ENDOFNAMES : send_reply(s, c, to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :End of /NAMES list.\n");break;
 		default: ;
 	}
 }

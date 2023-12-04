@@ -31,12 +31,12 @@ Message::Message(std::string &msg, std::map<std::string, int> commands) {
 	size_t pos;
 
 	pos = msg.find(" ");
-	std::cout << "DEBUG "<< msg << "\n";
+	//std::cout << "DEBUG "<< msg << "\n";
 	while (msg.find("\n") != std::string::npos)
 		msg.erase(msg.find("\n"));
 	while (msg.find("\r") != std::string::npos)
 		msg.erase(msg.find("\r"));
-	std::cout <<"DEBUG2 "<< msg << "\n";
+	//std::cout <<"DEBUG2 "<< msg << "\n";
 	if (msg.find(" ") == std::string::npos) {pos = msg.size();}
 	std::string fword = msg.substr(0, pos);
 	//check if it is a prefix and setup the next word as the first word

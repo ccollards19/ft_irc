@@ -76,15 +76,15 @@ void parse(struct server *s, struct client *c)
   unsigned long pos;
   while ((pos = c->_receive_buffer.find('\n')) != std::string::npos)
   {
-	  	std::cout << "PARSING: "  + c->_receive_buffer << "\n";
+	  	//std::cout << "PARSING: "  + c->_receive_buffer << "\n";
 		  Message msg(c->_receive_buffer, s->_cmds);
 		  c->_receive_buffer.erase(0, pos + 1);
-	  std::cout << "ERASE: "  + c->_receive_buffer << "\n";
-		  std::cout << "command " << msg.getCommand() << "\n";
+	  //std::cout << "ERASE: "  + c->_receive_buffer << "\n";
+		  std::cout << "command :" << msg.getCommandName() << "\n";
 		  switch (msg.getCommand())
 		  {
 			  case KICK: s->kill(msg, c);break;
-				  //case TOPIC: s->topic(msg, c);break;
+			  case TOPIC: s->topic(msg, c);break;
 			  case MODE: s->mode(msg, c);break;
 				  //case INVITE: s->invite(msg, c);break;
 				  //case PRIVMSG: s->privmsg(msg, c);break;
