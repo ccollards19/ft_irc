@@ -68,7 +68,6 @@ void server::close_connection(client *client)
 {
 	close(client->_fd);
 	_connections.erase(client->_fd);
-  delete client;
 	//_nick_map.erase(client->_nickname);
 	//TODO remove from channels and nick cleaning when implemented
 	delete client;
