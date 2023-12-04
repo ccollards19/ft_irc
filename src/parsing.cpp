@@ -57,6 +57,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 	int cmd;
 	try{cmd = commands.at(fword);}
 	catch (std::exception &e) {cmd = 0;}
+	std::cout << cmd << std::endl;
 	switch (cmd) {
 		case KICK: _command = KICK; break;
 		case INVITE : _command = INVITE; break;
@@ -68,6 +69,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		case PING : _command = PING; break;
 		case PONG : _command = PONG; break;
 		case BAN : _command = BAN; break;
+		case PASS: _command = PASS; break;
 		case USER : _command = USER;break;
 		default: _command = NONE;
 	}

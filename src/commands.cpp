@@ -65,23 +65,14 @@ void server::pong(Message &m, struct client *client)//TODO
 //                  USER
 
 void server::user(Message &m, client *client){
+	std::cout << "USER\n";
 	std::vector<std::string> params = m.getContent();
-	std::string realName;
-	if (client->getNickname().empty())
-		reply(m, *this, *client, ERR_NONICKNAMEGIVEN);
 	if (params.size() < 4)
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
 	if (client->_isRegistered)
 		reply(m, *this, *client, ERR_ALREADYREGISTRED);
 	client->_username = params[0];
-	if (params.size() > 4)
-	{
-		if (!realName.empty())
-			realName.erase(realName.size() - 1);
-		for (size_t i = 3; i < params.size(); i++)
-			realName += params[i] + " ";
-		//RPL_WELCOME ?
-	}
+	client->_realname = params[3];
 	reply(m, *this, *client, RPL_WELCOME);
 	reply(m, *this, *client, RPL_YOURHOST);
 	reply(m, *this, *client, RPL_CREATED);
@@ -261,6 +252,7 @@ void server::joinMessage(channel *target, client *c)
 		send_reply(*this, **it, ":" + _servername + " :" + c->_nickname + "JOIN" + target->_name + "\n");
 	}
 }
+
 void server::join(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
 	if (params.size() < 1)
@@ -276,7 +268,7 @@ void server::join(Message &m, client *client){
 		{
 			if (std::find(current->_members.begin(), current->_members.end(), client) == current->_members.end())
 			{
-				std::cout << current->_name << " has no member named " << client->getNickname() << " yet\n";
+				//std::cout << current->_name << " has no member named " << client->getNickname() << " yet\n";
 				joinMessage(current, client);
 				current->_members.push_back(client);
 			}

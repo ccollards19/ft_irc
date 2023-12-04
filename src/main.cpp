@@ -45,16 +45,17 @@ void server::init(char **argv)
 	_creation_date.append(std::asctime(std::localtime(&tmp_time)));
   
 	_cmds["KICK"] = KICK;
+	_cmds["INVITE"] = INVITE;
 	_cmds["TOPIC"] = TOPIC;
 	_cmds["MODE"] = MODE;
-	_cmds["INVITE"] = INVITE;
 	_cmds["NICK"] = NICK;
 	_cmds["PRIVMSG"] = PRIVMSG;
 	_cmds["JOIN"] = JOIN;
 	_cmds["PING"] = PING;
 	_cmds["PONG"] = PONG;
+	_cmds["BAN"] = BAN;
+	_cmds["PASS"] = PASS;
 	_cmds["USER"] = USER;
-	_cmds["USER"] = PASS;
 	//define the "name" assigned to the server socket
 	struct sockaddr_in tmp; 
 	tmp.sin_family = AF_INET;
