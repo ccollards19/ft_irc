@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <netdb.h>
 
 //to be expanded as needed
 void server::safe_shutdown(int exit_code) {
@@ -11,11 +12,13 @@ void server::safe_shutdown(int exit_code) {
 	if (_kq)
 		close(_kq);
 	std::map<int, client *>::iterator end = _connections.end();
-	for (std::map<int, client *>::iterator it = _connections.begin();
-		 it != end; it++) {
+	for (std::map<int, client *>::iterator it = _connections.begin(); it != end; it++) {
 		close(it->second->_fd);
+    std::cout << "close" << it->second->_fd << std::endl;
 		delete (it->second);
 	}
+  if (_res_start)
+    freeaddrinfo(_res_start);
 	exit(exit_code);
 }
 
@@ -79,13 +82,13 @@ void server::regular_tasks() {
 void parse(struct server *s, struct client *c) {
 	unsigned long pos;
 	while ((pos = c->_receive_buffer.find('\n')) != std::string::npos) {
-		std::cout << "PARSING: " + c->_receive_buffer << "\n";
+		// std::cout << "PARSING: " + c->_receive_buffer << "\n";
 		Message msg((c->_receive_buffer).substr(0, pos + 1), s->_cmds);
 		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
 		c->_receive_buffer.erase(0, (pos + 1));
 		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
-		std::cout << "command : [" << msg.getCommand() << "] "<< msg.getCommandName() << "\n";
-		msg.showContent();
+		// std::cout << "command : [" << msg.getCommand() << "] "<< msg.getCommandName() << "\n";
+		// msg.showContent();
 		switch (msg.getCommand()) {
 			case KICK:s->kill(msg, c);break;
 			case TOPIC:s->topic(msg, c);break;
@@ -152,19 +155,22 @@ void server::send_message() {
 void server::add_connection() {
 	std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
 	std::cout << "new connection" << std::endl;//test
-	int newfd = accept(_socketfd, &(_sock_addr), &(_socklen));
-	if (newfd == -1) {
-		std::cerr << "socket error when adding new connection " << std::endl
-				  << "error: " << strerror(errno) << std::endl;
-		safe_shutdown(EXIT_FAILURE);
-	}
-	_connections[newfd] = new(std::nothrow) client();
-	if (_connections[newfd] == NULL) {
+  client *new_client = new(std::nothrow) client();
+	if (new_client == NULL) {
 		std::cerr << "memory error when adding new connection " << std::endl;
 		safe_shutdown(EXIT_FAILURE);
 	}
-	_connections[newfd]->_fd = newfd;
-	_connections[newfd]->_ping = 0;
+	int newfd = accept(_socketfd, &(new_client->_sockaddr), &(new_client->_socklen));
+	if (newfd == -1) {
+		std::cerr << "socket error when adding new connection " << std::endl
+				  << "error: " << strerror(errno) << std::endl;
+    delete new_client;
+		safe_shutdown(EXIT_FAILURE);
+	}
+	_connections[newfd] = new_client;
+	new_client->_fd = newfd;
+	new_client->_ping = 0;
+	new_client->_isRegistered = 0;
 	read_set(newfd);
 	write_unset(newfd);
 	update_timer(newfd, CLIENT_TTL);

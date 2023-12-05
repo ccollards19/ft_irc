@@ -18,6 +18,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <netdb.h>
 #include "errors.hpp"
 
 #define SERVNAME "irc.ircserv.test"
@@ -91,6 +92,8 @@ struct client
 	bool    _ping;
 	bool _isRegistered;
 	bool _is_oper;
+  struct sockaddr _sockaddr;
+  socklen_t _socklen;
 	//user related
 	std::string _nickname;
 	std::string _username;
@@ -118,8 +121,9 @@ struct server
 	std::vector<channel *> _chan_list;
 	std::map<std::string, int> _cmds;
 	//socket related
-	struct sockaddr		_sock_addr;
-	socklen_t		_socklen;
+  struct addrinfo _hints;
+  struct addrinfo *_res;
+  struct addrinfo *_res_start;
 	int			_socketfd;
 	//kevent related
 	struct kevent		_changelist;

@@ -1,4 +1,5 @@
 #include "irc.hpp"
+#include <cstdio>
 
 // event loop using kevents
 void server::run()
@@ -43,7 +44,8 @@ void server::init(char **argv)
   _servername = SERVNAME;
 	std::time_t tmp_time = std::time(nullptr);
 	_creation_date.append(std::asctime(std::localtime(&tmp_time)));
-  
+  _res_start = NULL;
+  //create map for parsing 
 	_cmds["KICK"] = KICK;
 	_cmds["INVITE"] = INVITE;
 	_cmds["TOPIC"] = TOPIC;
@@ -56,32 +58,46 @@ void server::init(char **argv)
 	_cmds["BAN"] = BAN;
 	_cmds["PASS"] = PASS;
 	_cmds["USER"] = USER;
-	//define the "name" assigned to the server socket
-	struct sockaddr_in tmp; 
-	tmp.sin_family = AF_INET;
-	tmp.sin_port = htons(atoi(argv[1]));
-	tmp.sin_addr.s_addr = INADDR_ANY;
-	memcpy(&_sock_addr, &tmp, sizeof(struct sockaddr));//fucking hacky code, fucking c++ and its fucking types
-	_socklen = sizeof(struct sockaddr_in);
 	//memset shit to 0
 	memset(&_timeout, 0, sizeof(struct timespec));
 	memset(&_changelist, 0, sizeof(struct kevent));
 	memset(&_eventlist, 0, sizeof(struct kevent));
+	//define the info's relevant to the server socket
+  memset(&_hints, 0, sizeof(_hints)); // make sure the struct is empty
+  _hints.ai_family = AF_UNSPEC;     // IPv4 or IPv6
+  _hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
+  _hints.ai_protocol = IPPROTO_TCP; // TCP protocol
+  _hints.ai_flags = AI_PASSIVE;     // INADDR_ANY kinda
+  if (getaddrinfo(NULL, argv[1], &_hints, &_res) != 0) {
+		std::cerr<<"getaddrinfo error durring server startup "<<std::endl
+			<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+  }
+  _res_start = _res;
+  while (_res->ai_family != PF_INET && _res->ai_family != PF_INET6 && _res->ai_next)
+    _res = _res->ai_next;
+  if (_res == NULL) {
+		std::cerr<<"no ip socket durring server startup "<<std::endl
+			<<"error: "<<strerror(errno)<<std::endl;
+		safe_shutdown(EXIT_FAILURE);
+  }
 	//create the server socket and bind it
-	if (((_socketfd = socket(PF_INET, SOCK_STREAM, 0)) == -1)\
+	int yes=1; // for the setsockopt()
+  if (((_socketfd = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol)) == -1)\
 			|| (fcntl(_socketfd, F_SETFL, O_NONBLOCK) == -1)\
-			|| (bind(_socketfd, &(_sock_addr), sizeof(_sock_addr)) == -1 && printf("bind\n"))\
-			|| (listen(_socketfd, 1) == -1 && printf("listen\n")))
+      || (setsockopt(_socketfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)\
+			|| (bind(_socketfd, _res->ai_addr, _res->ai_addrlen) == -1)\
+			|| ((listen(_socketfd, 2) == -1) && printf("HERE\n")))
 	{
 		std::cerr<<"socket error durring server startup "<<std::endl
 			<<"error: "<<strerror(errno)<<std::endl;
-		this->safe_shutdown(EXIT_FAILURE);
+		safe_shutdown(EXIT_FAILURE);
 	}
 	if ((_kq = kqueue()) == -1)//create the kqueue
 	{
 		std::cerr<<"kqueue error durring server startup "<<std::endl
 			<<"error: "<<strerror(errno)<<std::endl;
-		this->safe_shutdown(EXIT_FAILURE);
+		safe_shutdown(EXIT_FAILURE);
 	}
 	read_set(_socketfd);//add server socket to the kqueue
 	read_set(STDIN_FILENO);//add server socket to the kqueue
@@ -97,11 +113,14 @@ void server::init(char **argv)
 
 int main(int argc, char **argv)
 {
-	if (argc != 3)
-	{
+	if (argc != 3) {
 		std::cerr<<"usage: ./ft_irc [port] [password]"<<std::endl;
 		return (EXIT_FAILURE);
 	}
+  else if (atoi(argv[1]) <= 1024) {
+		std::cerr<<"error: reserved or wrong port"<<std::endl;
+		return (EXIT_FAILURE);
+	}  
 	server server;
 	server.init(argv);
 	server.run();

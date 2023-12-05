@@ -47,7 +47,7 @@ void server::ping(Message &m, struct client *client)
   if (params.size() > 1)
     reply(m, *this, *client, ERR_NOSUCHSERVER);
   else
-	  send_reply(*this, *client, "PONG \n");
+	  send_reply(*this, *client, ":"+ _servername +" PONG \n");
 	update_timer(client->_fd, CLIENT_TTL);
 }
 
