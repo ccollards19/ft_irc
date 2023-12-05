@@ -330,3 +330,57 @@ void server::topic(Message &m, client *client)
 	else
 		reply(m, *this, *client, ERR_NOSUCHCHANNEL);
 }
+
+
+//			PRIVMSG
+
+// int	server::msg_chan(Message m, client *client) {
+// 	std::vector<std::string> params = m.getContent();
+// 	if (params.size() < 3)
+// 		return (ERR_NEEDMOREPARAMS);
+// 	std::string	msg = params[2];
+//     std::vector<channel>::iterator chan = getChannel(params[1]);
+//     if (isClientInChannel(*chan, client.getNickname()))
+//         //chan->reply(RPL_PRIVMSG);
+//     else
+//         reply(ERR_CANNOTSENDTOCHANNEL);//Bien ça ?
+// }
+
+void server::chanMessage(channel *target, client *c, std::string msg)
+{
+	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
+		send_reply(*this, **it, msg);
+	}
+}
+
+int	server::privmsg(Message &m, client *client) {
+	std::vector<std::string> params = m.getContent();
+	std::string	msg = params[2];
+	if (params.size() < 3)
+		return (ERR_NEEDMOREPARAMS);
+	else if (params[1].at(0) == '#') {
+    	std::vector<channel>::iterator chan = getChannel(params[1]);
+		if (client.isMember(chan))
+        	chanMessage(chan, client, msg);
+    	else
+        	reply(ERR_CANNOTSENDTOCHANNEL);//Bien ça ?
+	}
+	else
+		send_reply(*this, *client, msg);
+}
+
+//				QUIT
+
+void	server::quit(Message &m, client *quitting_client) {
+	std::vector<std::string> params = m.getContent();
+	std::string	msg = params[1];
+	std::string quit_message = "QUIT :" + msg;
+
+    for (std::map<std::string, client *>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it) {
+        client *current_client = it->second;
+        // Avoid sending the quit message to the client who is quitting
+        if (current_client != quitting_client) {
+            send_reply(*this, *current_client, quit_message);
+        }
+    }
+}
