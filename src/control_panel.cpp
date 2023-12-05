@@ -133,6 +133,8 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 		case ERR_NOOPERHOST  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  "No O-lines for your host\n");break;
 		case ERR_UMODEUNKNOWNFLAG  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  ":Unknown MODE flag\n");break;
 		case ERR_USERSDONTMATCH  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  ":Can't change mode for other users\n");break;
+
+
 		case RPL_WELCOME : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "Welcome to the Internet Relay Network " + c._nickname + "!" +c._username + "@" + c._hostname + "\n");break;
 		case RPL_YOURHOST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "Your host is " + s._servername + ", running version S19CCKKNER\n");break;
 		case RPL_CREATED : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "This server was created " + s._creation_date + "\n");break;

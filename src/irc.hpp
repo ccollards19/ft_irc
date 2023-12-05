@@ -71,6 +71,7 @@ struct channel
    */
 	char _prefix;
 	struct client *_creator;
+	size_t _capacity;
 	std::vector<struct client *> _members;
 	std::vector<struct client *> _operators;
 	std::vector<struct client *> _invite_list;
@@ -78,6 +79,7 @@ struct channel
 	std::string _mode;
 	std::string _name;
 	std::string _topic;
+	std::string _pwd;
 	bool isInvited(client *c);
 	void removeInvited(struct client *client);
 	void addClient(client *client);
@@ -160,11 +162,14 @@ struct server
 	void mode(Message &m, struct client *client);
 	void join(Message &m, struct client *client);
 	void topic(Message &m, struct client *client);
+	void quit(Message &m, client *quitting_client);
+	void privmsg(Message &m, client *client);
 	bool isAchannel(std::string name);
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
 	bool checkChannel(std::string channelName);
 	struct channel *createChannel(std::string channelName, struct client *client);
 	void joinMessage(channel *target, client *c);
+	void chanMessage(channel *target, client *c, std::string msg);
 };
 
 

@@ -134,29 +134,161 @@ bool client::isMember(channel *c){
 void server::mode(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
 	std::string modes("airoO");
-
-	if (params[0][1] == '#')//CHANNEL MODE
+	std::string chanModes("itkol");
+	if (params[0][0] == '#')//CHANNEL MODE
 	{
 		channel *c;
-		if (params.size() < 3)
+		if (params.size() < 2)
+		{
 			reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+			return ;
+		}
 		if (!isAchannel(params[0]))
+		{
 			reply(m, *this, *client, ERR_NOSUCHCHANNEL);
+			return ;
+		}
 		else
 		{
 			c = *getChannel(params[0]);
 			if (!client->isChanop(c))
-				reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
-			if (!client->isMember(c))
-				reply(m, *this, *client, ERR_NOSUCHNICK);
-			if (params.size() == 2)
 			{
-				if (params[1][0] == '+')
-					;
+				reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+				return ;
+			}
+			if (!client->isMember(c))
+			{
+				reply(m, *this, *client, ERR_NOSUCHNICK);
+				return ;
+			}
+			if (params.size() > 2)
+			{
+				std::string mode(params[1]);
+				if (mode[0] == '+')
+				{
+					for (size_t i = 1; i < mode.size() - 1; ++i) {
+						if (chanModes.find(mode[i]))
+						{
+							if (!c->isModeSet(mode[i]))
+								c->_mode += mode[i];
+							if (mode[i] == 'i')
+							{
+								if (params.size() > 2)
+								{
+									if (_nick_map.find(params[2]) != _nick_map.end())
+									{
+										struct client *invited = _nick_map[params[2]];
+										c->_invite_list.push_back(invited);
+									}
+								}
+								else
+								{
+									reply(m, *this, *client, RPL_INVITELIST);
+									reply(m, *this, *client, RPL_ENDOFINVITELIST);
+									return ;
+								}
+							}
+							if (mode[i] == 'k')
+							{
+								if (params.size() > 2)
+								{
+									if (client->isChanop(c))
+										c->_pwd = params[2];
+									else
+									{
+										reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+										return ;
+									}
+								}
+								else
+								{
+									c->_mode.erase(c->_mode.find(mode[i]));
+									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+									return ;
+								}
+							}
+							if (mode[i] == 'o')
+							{
+								if (!client->isChanop(c))
+								{
+									reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+									return;
+								}
+								else if (params.size() < 3)
+								{
+									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+									return ;
+								}
+								else if (_nick_map.find(params[2]) == _nick_map.end())
+								{
+									reply(m, *this, *client, ERR_NOSUCHNICK);
+									return ;
+								}
+								else if (!_nick_map[params[2]]->isMember(c))
+								{
+									reply(m, *this, *client, ERR_NOTONCHANNEL);
+									return ;
+								}
+								else
+									c->_operators.push_back(_nick_map[params[2]]);
+							}
+							if (mode[i] == 'l')
+							{
+								if (params.size() < 3)
+								{
+									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+									return ;
+								}
+								int size = stoi(params[2]);
+								if (size < 0)
+									c->_capacity = 0;
+								else
+									c->_capacity = size;
+							}
+						}
+					}
+				}
 				else if (params[1][0] == '-')
-					;
+				{
+					for (size_t i = 1; i < mode.size() -1; ++i) {
+						if (chanModes.find(mode[i])) {
+							if (c->_mode.find(mode[i]))
+								c->_mode.erase(c->_mode.find(mode[i]));
+							if (mode[i] == 'o')
+							{
+								struct client *target;
+								if (params.size() < 3)
+								{
+									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+									return ;
+								}
+								if (_nick_map.find(params[2]) == _nick_map.end())
+								{
+									reply(m, *this, *client, ERR_NOSUCHNICK);
+									return ;
+								}
+								if (!_nick_map[params[2]]->isMember(c))
+								{
+									reply(m, *this, *client, ERR_NOTONCHANNEL);
+									return ;
+								}
+								else
+									target = _nick_map[params[2]];
+								if (!client->isChanop(c) || target == c->_creator)
+								{
+									reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+									return;
+								}
+								else
+									c->_operators.erase(std::find(c->_operators.begin(),c->_operators.end(), target));
+							}
+						}
+					}
+				}
 				else
-					reply(m, *this, *client, ERR_KEYSET);
+				{
+
+				};
 			}
 			else
 			{
@@ -167,11 +299,20 @@ void server::mode(Message &m, client *client){
 	else//USER MODE
 	{
 		if (params.size() < 2)
+		{
 			reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+			return ;
+		}
 		if (params[0] != client->getNickname())
+		{
 			reply(m, *this, *client, ERR_USERSDONTMATCH);
+			return ;
+		}
 		if (modes.find(params[1][1]) == std::string::npos)
+		{
 			reply(m, *this, *client, ERR_UMODEUNKNOWNFLAG);
+			return ;
+		}
 		else if (!((params[1] == "+o" || params[1] == "+O") && !client->_is_oper))
 		{
 			if (params[1][0] == '+' && client->_mode.find(params[1][1]) == std::string::npos)
@@ -235,6 +376,7 @@ struct channel *server::createChannel(std::string channelName, struct client *cl
 		chan->_creator = client;
 		chan->_prefix = '#';
 		chan->_chan_id = channelName;
+		chan->_capacity = 0;
 		_chan_list.push_back(chan);
 		return _chan_list.back();
 	}
@@ -264,6 +406,15 @@ void server::join(Message &m, client *client){
 	struct channel *current;
 	if (params[0][0] == '#'){
 		current = createChannel(channelName, client);
+		if (current->_capacity && current->isModeSet('l') && current->_capacity >= current->_members.size())
+		{
+			reply(m, *this, *client, ERR_CHANNELISFULL);
+			return ;
+		}
+		if (current->isModeSet('k'))
+		{
+
+		}
 		if (!current->isModeSet('i'))
 		{
 			if (std::find(current->_members.begin(), current->_members.end(), client) == current->_members.end())
@@ -322,7 +473,7 @@ void server::topic(Message &m, client *client)
 				reply(m, *this, *client, RPL_TOPIC);
 
 		}
-		else if (client->isChanop(current))
+		else if (client->isChanop(current) || !current->isModeSet('t'))
 			current->_topic = params[1];
 		else
 			reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
@@ -349,21 +500,28 @@ void server::topic(Message &m, client *client)
 void server::chanMessage(channel *target, client *c, std::string msg)
 {
 	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
-		send_reply(*this, **it, msg);
+		send_reply(*this, **it, c->getNickname() + ": " + msg);
 	}
 }
 
-int	server::privmsg(Message &m, client *client) {
+void	server::privmsg(Message &m, client *client) {
 	std::vector<std::string> params = m.getContent();
 	std::string	msg = params[2];
+	channel *chan;
 	if (params.size() < 3)
-		return (ERR_NEEDMOREPARAMS);
+		reply (m, *this, *client, ERR_NEEDMOREPARAMS);
 	else if (params[1].at(0) == '#') {
-    	std::vector<channel>::iterator chan = getChannel(params[1]);
-		if (client.isMember(chan))
+		if (checkChannel(params[1]))
+    		chan = *getChannel(params[1]);
+		else
+		{
+			reply(m, *this, *client, ERR_NOSUCHCHANNEL);
+			return ;
+		}
+		if (client->isMember(chan))
         	chanMessage(chan, client, msg);
     	else
-        	reply(ERR_CANNOTSENDTOCHANNEL);//Bien ça ?
+        	reply(m, *this, *client, ERR_CANNOTSENDTOCHAN);//Bien ça ?
 	}
 	else
 		send_reply(*this, *client, msg);
