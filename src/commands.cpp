@@ -76,6 +76,7 @@ void server::user(Message &m, client *client){
     return;
   }
 	client->_username = params[0];
+  //TODO set mode
 	client->_realname = params[3];
 	reply(m, *this, *client, RPL_WELCOME);
 	reply(m, *this, *client, RPL_YOURHOST);

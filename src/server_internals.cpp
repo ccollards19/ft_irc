@@ -60,6 +60,7 @@ void server::check_connection(struct client *c) {
 	{
 	  c->_send_buffer.append("PING\n");
 	  c->_ping = 1;
+    c->_sockaddr.
 	  write_set(c->_fd);
 	  update_timer(c->_fd, CLIENT_TTL);
 	}*/
