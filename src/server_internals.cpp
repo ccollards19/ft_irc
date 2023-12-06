@@ -38,8 +38,7 @@ void server::server_admin() {
 		safe_shutdown(EXIT_FAILURE);
 	}
 	size_t nbyte = read(_eventlist.ident, buffer, (size_t) _eventlist.data);
-	if (nbyte <
-		0) // EAGAIN should have been used here but the subject does not allow for it
+	if (nbyte < 0) // EAGAIN should have been used here but the subject does not allow for it
 	{
 		free(buffer);
 		safe_shutdown(EXIT_FAILURE);

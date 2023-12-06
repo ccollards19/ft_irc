@@ -1,4 +1,5 @@
 #include "irc.hpp"
+#include <iterator>
 
 const std::string& client::getNickname() const
 {
@@ -10,6 +11,15 @@ const std::string& client::getNickname() const
 
 bool    client::isRegistered(){
 	return (_isRegistered); //must be set at FALSE
+}
+
+void register(Message m struct client *client)
+{
+  if (client->_pass.empty() || client->_nickname.empty() && client->_username.empty())
+	reply(m, *this, *client, RPL_WELCOME);
+	reply(m, *this, *client, RPL_YOURHOST);
+	reply(m, *this, *client, RPL_CREATED);
+	reply(m, *this, *client, RPL_MYINFO);
 }
 
 void server::pass(Message &m, struct client *client){
@@ -102,10 +112,6 @@ void server::user(Message &m, client *client){
   //TODO set mode
 	client->_realname = params[3];
 	client->_hostname = params[3];
-	reply(m, *this, *client, RPL_WELCOME);
-	reply(m, *this, *client, RPL_YOURHOST);
-	reply(m, *this, *client, RPL_CREATED);
-	reply(m, *this, *client, RPL_MYINFO);
 }
 
 //                  OPER
