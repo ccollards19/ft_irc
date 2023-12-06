@@ -535,9 +535,9 @@ void server::chanMessage(channel *target, client *c, std::string msg)
 	//std::cout << "host: " << c->_hostname << "\n" ;
 
 	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
-		std::cout << "sending message to " << (*it)->getNickname() << std::endl;
-		send_reply(*this, **it, ":" + c->_nickname + "!" + c->_username + "@"\
-		+ _servername + " PRIVMSG " + target->_name + " :" + msg);
+		if (*it != c)
+			send_reply(*this, **it, ":" + c->_nickname + "!" + c->_username + "@"\
+			+ _servername + " PRIVMSG " + target->_name + " :" + msg);
 	}
 }
 
