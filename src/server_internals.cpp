@@ -101,6 +101,7 @@ void parse(struct server *s, struct client *c) {
 			case NICK:s->nick(msg, c);break;
 				//case BAN: s->ban(msg, c);break;
 			case USER:s->user(msg, c);break;
+			case PART:s->part(msg, c);break;
 			default:break;
 		}
 	}

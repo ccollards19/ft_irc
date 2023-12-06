@@ -38,7 +38,8 @@ enum cmds
 	PONG,
 	BAN,
 	PASS,
-	USER
+	USER,
+	PART
 };
 
 class Message
@@ -164,6 +165,7 @@ struct server
 	void topic(Message &m, struct client *client);
 	void quit(Message &m, client *quitting_client);
 	void privmsg(Message &m, client *client);
+	void part(Message &m, client *client);
 	bool isAchannel(std::string name);
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
 	bool checkChannel(std::string channelName);
