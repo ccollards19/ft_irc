@@ -533,12 +533,7 @@ void	server::quit(Message &m, client *quitting_client) {
 	std::vector<std::string> params = m.getContent();
 	std::string	msg = params[1];
 	std::string quit_message = "QUIT :" + msg;
-
-    for (std::map<std::string, client *>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it) {
-        client *current_client = it->second;
-        // Avoid sending the quit message to the client who is quitting
-        if (current_client != quitting_client) {
-            send_reply(*this, *current_client, quit_message);
-        }
-    }
+	close_connection(quitting_client);
+    for (std::map<std::string, client *>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it)
+        send_reply(*this, *(it->second), quit_message);
 }
