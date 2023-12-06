@@ -94,7 +94,7 @@ void parse(struct server *s, struct client *c) {
 			case TOPIC:s->topic(msg, c);break;
 			case MODE:s->mode(msg, c);break;
 				//case INVITE: s->invite(msg, c);break;
-				//case PRIVMSG: s->privmsg(msg, c);break;
+			case PRIVMSG: s->privmsg(msg, c);break;
 			case JOIN:s->join(msg, c);break;
 			case PING:s->ping(msg, c);break;
 			case PONG:s->pong(msg, c);break;
