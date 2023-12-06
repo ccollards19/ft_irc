@@ -396,7 +396,8 @@ bool channel::isInvited(client *c) {
 void server::joinMessage(channel *target, client *c)
 {
 	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
-		send_reply(*this, **it, ":" + _servername + " :" + c->_nickname + "JOIN" + target->_name + "\n");
+		std::cout << "sending message to " << (*it)->getNickname() << std::endl;
+		send_reply(*this, **it, ":" + _servername + " :" + c->_nickname + " JOIN " + target->_name + "\n");
 	}
 }
 
@@ -504,20 +505,28 @@ void server::topic(Message &m, client *client)
 
 void server::chanMessage(channel *target, client *c, std::string msg)
 {
-	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
-		send_reply(*this, **it, c->getNickname() + ": " + msg);
-	}
+	std::cout << "nick: " << c->_nickname << "\n" ;
+	std::cout << "user: " << c->_username << "\n" ;
+	std::cout << "server: " << c->_servername << "\n" ;
+	std::cout << "host: " << c->_hostname << "\n" ;
+
+	//for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
+	//	std::cout << "sending message to " << (*it)->getNickname() << std::endl;
+		send_reply(*this, *c, ":" + c->_nickname + "!" + c->_username + "@localhost" + " PRIVMSG " + target->_name + " :" + msg);
+	//}
 }
 
 void	server::privmsg(Message &m, client *client) {
+	std::cout << "in privmsg !\n";
 	std::vector<std::string> params = m.getContent();
-	std::string	msg = params[2];
+	std::string	msg = params[1];
 	channel *chan;
-	if (params.size() < 3)
+	if (params.size() < 2)
 		reply (m, *this, *client, ERR_NEEDMOREPARAMS);
-	else if (params[1].at(0) == '#') {
-		if (checkChannel(params[1]))
-    		chan = *getChannel(params[1]);
+	else if (params[0][0] == '#') {
+		std::cout << "channel message !\n";
+		if (checkChannel(params[0]))
+    		chan = *getChannel(params[0]);
 		else
 		{
 			reply(m, *this, *client, ERR_NOSUCHCHANNEL);
@@ -526,10 +535,14 @@ void	server::privmsg(Message &m, client *client) {
 		if (client->isMember(chan))
         	chanMessage(chan, client, msg);
     	else
-        	reply(m, *this, *client, ERR_CANNOTSENDTOCHAN);//Bien ça ?
+        	reply(m, *this, *client, ERR_CANNOTSENDTOCHAN);
 	}
 	else
+	{
+		std::cout << "client message !\n";
 		send_reply(*this, *client, msg);
+	}
+
 }
 
 //				QUIT
