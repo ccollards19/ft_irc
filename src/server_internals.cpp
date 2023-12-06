@@ -25,8 +25,8 @@ void server::safe_shutdown(int exit_code) {
 // read the standard output and process commands only quits
 void server::server_admin() {
 	std::cout << "||||||||||SERVADMN||||||||||" << std::endl;
-	std::cout << (size_t) _eventlist.data << " bytes received on fd : "
-			  << _eventlist.ident << std::endl;//test
+	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["
+			  << _eventlist.ident << "]\n";//test
 	if ((size_t) _eventlist.data == 0)
 		safe_shutdown(EXIT_SUCCESS);
 	char *buffer = (char *) malloc(
@@ -109,8 +109,8 @@ void parse(struct server *s, struct client *c) {
 
 void server::receive_message() {
 	std::cout << "||||||||||RECVDATA||||||||||" << std::endl;
-	std::cout << (size_t) _eventlist.data << " bytes received on fd : "
-			  << _eventlist.ident << std::endl;//test
+	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["
+			  << _eventlist.ident << "]";//test
 	if ((size_t) _eventlist.data == 0) {
 		if ((_eventlist.flags & EV_EOF) == EV_EOF)
 			close_connection(_connections[(size_t) _eventlist.ident]);
@@ -131,7 +131,7 @@ void server::receive_message() {
 	}
 	_connections[_eventlist.ident]->_receive_buffer.append(buffer,
 														   _eventlist.data);
-	std::cout << buffer << std::endl;//test
+	std::cout << "[" << buffer  << "]"<< std::endl;//test
 	free(buffer);
 	parse(this, _connections[_eventlist.ident]);
 }
@@ -140,7 +140,7 @@ void server::send_message() {
 	client *tmp = _connections[_eventlist.ident];
 	std::cout << "||||||||||SENDDATA||||||||||" << std::endl;
 	std::cout << "sent message on fd : " << tmp->_fd << std::endl;//test
-	std::cout << tmp->_send_buffer << std::endl;//test
+	std::cout << "[" + tmp->_send_buffer + "]" << std::endl;//test
 	int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(),
 					 tmp->_send_buffer.size(), 0);
 	if (nbyte <
