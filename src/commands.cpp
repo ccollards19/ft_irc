@@ -35,6 +35,29 @@ void server::nick(Message &m, struct client *client){
 	if (_nick_map.find(params[0]) != _nick_map.end())
 		reply(m, *this, *client, ERR_NICKNAMEINUSE);
 	else {
+		bool hasNick = false;
+		std::map<std::string, struct client*>::iterator i;
+		if (!_nick_map.empty())
+		{
+			i = _nick_map.begin();
+			std::cout << "debug\n";
+			for ( ; i != _nick_map.end() ; ++i) {
+				std::cout << "nick: "<< i->second->getNickname() << "\n";
+				if (client == i->second)
+				{
+					hasNick = true;
+					break ;
+				}
+				std::cout << "loop\n";
+			}
+		}
+		std::cout << "debug 2\n";
+		if (hasNick)
+		{
+			send_reply(*this, *client, ":" + i->second->_nickname + "!" + i->second->_username + "@" + _servername + " NICK :" + params[0]);
+			_nick_map.erase(i);
+		}
+		std::cout << "debug 3\n";
 		_nick_map[params[0]] = client;
 		client->_nickname = params[0];
 	}
@@ -77,6 +100,7 @@ void server::user(Message &m, client *client){
   }
 	client->_username = params[0];
 	client->_realname = params[3];
+	client->_hostname = params[3];
 	reply(m, *this, *client, RPL_WELCOME);
 	reply(m, *this, *client, RPL_YOURHOST);
 	reply(m, *this, *client, RPL_CREATED);
@@ -396,7 +420,7 @@ void server::joinMessage(channel *target, client *c)
 {
 	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
 		std::cout << "sending message to " << (*it)->getNickname() << std::endl;
-		send_reply(*this, **it, ":" + _servername + " :" + c->_nickname + " JOIN " + target->_name + "\n");
+		send_reply(*this, **it, ":" + _servername + " :" + c->_nickname + " JOIN " + target->_name);
 	}
 }
 
@@ -442,7 +466,7 @@ void server::join(Message &m, client *client){
 				reply(m, *this, *client, ERR_INVITEONLYCHAN);
 		reply(m, *this, *client, RPL_NAMREPLY);
 		reply(m, *this, *client, RPL_ENDOFNAMES);
-		send_reply(*this, *client, ":" + client->getNickname() + " JOIN " + current->_name + "\n");
+		send_reply(*this, *client, ":" + client->getNickname() + " JOIN " + current->_name);
 		//332 your_nick #chan :Welcome to #chan!
 		//send_reply(*this, *client, "332 " + client->_nickname + " " + current->_name + " :Welcome to " + current->_name + "!\n");
 		//send_reply(*this, *client, ":" + client->_nickname + client->_username + " JOIN " + ":" + current->_name);
@@ -478,7 +502,7 @@ void server::topic(Message &m, client *client)
 				reply(m, *this, *client, RPL_TOPIC);
 
 		}
-		else if (client->isChanop(current) || !current->isModeSet('t'))
+		else if (client->isMember(current) && (client->isChanop(current) || !current->isModeSet('t')))
 			current->_topic = params[1];
 		else
 			reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
@@ -504,15 +528,16 @@ void server::topic(Message &m, client *client)
 
 void server::chanMessage(channel *target, client *c, std::string msg)
 {
-	std::cout << "nick: " << c->_nickname << "\n" ;
-	std::cout << "user: " << c->_username << "\n" ;
-	std::cout << "server: " << c->_servername << "\n" ;
-	std::cout << "host: " << c->_hostname << "\n" ;
+	//std::cout << "nick: " << c->_nickname << "\n" ;
+	//std::cout << "user: " << c->_username << "\n" ;
+	//std::cout << "server: " << c->_servername << "\n" ;
+	//std::cout << "host: " << c->_hostname << "\n" ;
 
-	//for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
-	//	std::cout << "sending message to " << (*it)->getNickname() << std::endl;
-		send_reply(*this, *c, ":" + c->_nickname + "!" + c->_username + "@localhost" + " PRIVMSG " + target->_name + " :" + msg);
-	//}
+	for (std::vector<struct client *>::iterator it = target->_members.begin(); it != target->_members.end() ; ++it) {
+		std::cout << "sending message to " << (*it)->getNickname() << std::endl;
+		send_reply(*this, **it, ":" + c->_nickname + "!" + c->_username + "@"\
+		+ _servername + " PRIVMSG " + target->_name + " :" + msg);
+	}
 }
 
 void	server::privmsg(Message &m, client *client) {

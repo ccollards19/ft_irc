@@ -3,7 +3,7 @@
 void send_reply(struct server &s,struct client &c, std::string message)
 {
 	//std::cerr << "RENTRE RPL\n";
-	c._send_buffer.append(message);
+	c._send_buffer.append(message + "\n");
 	s.write_set(c._fd);
 }
 
