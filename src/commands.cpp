@@ -52,7 +52,7 @@ void server::ping(Message &m, struct client *client)
 }
 
 //                 PONG 
-void server::pong(Message &m, struct client *client)//TODO
+void server::pong(Message &m, struct client *client)
 {
 	std::vector<std::string> params = m.getContent();
   if (params.size() > 1)
@@ -67,10 +67,14 @@ void server::pong(Message &m, struct client *client)//TODO
 void server::user(Message &m, client *client){
 	std::cout << "USER\n";
 	std::vector<std::string> params = m.getContent();
-	if (params.size() < 4)
+	if (params.size() < 4) {
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-	if (client->_isRegistered)
+    return;
+  }
+	if (client->_isRegistered) {
 		reply(m, *this, *client, ERR_ALREADYREGISTRED);
+    return;
+  }
 	client->_username = params[0];
 	client->_realname = params[3];
 	reply(m, *this, *client, RPL_WELCOME);
