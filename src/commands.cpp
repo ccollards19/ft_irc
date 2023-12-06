@@ -500,12 +500,18 @@ void server::topic(Message &m, client *client)
 				reply(m, *this, *client, RPL_NOTOPIC);
 			else
 				reply(m, *this, *client, RPL_TOPIC);
+			return ;
 
 		}
-		else if (client->isMember(current) && (client->isChanop(current) || !current->isModeSet('t')))
-			current->_topic = params[1];
+		if (client->isMember(current))
+		{
+			if (client->isChanop(current) || !current->isModeSet('t'))
+				current->_topic = params[1];
+			else
+				reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+		}
 		else
-			reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+			reply(m, *this, *client, ERR_NOTONCHANNEL);
 	}
 	else
 		reply(m, *this, *client, ERR_NOSUCHCHANNEL);
