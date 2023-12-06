@@ -172,6 +172,7 @@ void server::add_connection() {
 	new_client->_fd = newfd;
 	new_client->_ping = 0;
 	new_client->_isRegistered = 0;
+	new_client->_hostname = _servername;
 	read_set(newfd);
 	write_unset(newfd);
 	update_timer(newfd, CLIENT_TTL);
