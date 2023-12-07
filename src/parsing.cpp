@@ -13,6 +13,7 @@ std::string Message::getCommandName() {
 		case NICK:return "NICK";
 		case BAN:return "BAN";
 		case USER:return "USER";
+		case PART:return "PART";
 		default: return "";
 	}
 }
@@ -71,6 +72,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		case BAN : _command = BAN; break;
 		case PASS: _command = PASS; break;
 		case USER : _command = USER;break;
+		case PART : _command = PART;break;
 		default: _command = NONE;
 	}
 	if (_command)

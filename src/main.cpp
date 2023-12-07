@@ -58,6 +58,7 @@ void server::init(char **argv)
 	_cmds["BAN"] = BAN;
 	_cmds["PASS"] = PASS;
 	_cmds["USER"] = USER;
+	_cmds["PART"] = PART;
 	//memset shit to 0
 	memset(&_timeout, 0, sizeof(struct timespec));
 	memset(&_changelist, 0, sizeof(struct kevent));

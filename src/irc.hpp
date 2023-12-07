@@ -38,7 +38,8 @@ enum cmds
 	PONG,
 	BAN,
 	PASS,
-	USER
+	USER,
+	PART
 };
 
 class Message
@@ -103,6 +104,7 @@ struct client
 	std::string _servername;
 	std::string _realname;
 	std::string _mode;
+	bool _pass;
 	//buffers
 	std::string _send_buffer;
 	std::string _receive_buffer;
@@ -152,6 +154,7 @@ struct server
 	//actions
 	void			send_message();
 	void			receive_message();
+	void register_client(Message &m, struct client *client);
 	void ping(Message &m, struct client *client);
 	void pong(Message &m, struct client *client);
 	void pass(Message &m, struct client *client);
@@ -164,6 +167,7 @@ struct server
 	void topic(Message &m, struct client *client);
 	void quit(Message &m, client *quitting_client);
 	void privmsg(Message &m, client *client);
+	void part(Message &m, client *client);
 	bool isAchannel(std::string name);
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
 	bool checkChannel(std::string channelName);

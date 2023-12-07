@@ -100,7 +100,9 @@ void parse(struct server *s, struct client *c) {
 			case PONG:s->pong(msg, c);break;
 			case NICK:s->nick(msg, c);break;
 				//case BAN: s->ban(msg, c);break;
+			case PASS: s->pass(msg, c);break;
 			case USER:s->user(msg, c);break;
+			case PART:s->part(msg, c);break;
 			default:break;
 		}
 	}
@@ -109,7 +111,7 @@ void parse(struct server *s, struct client *c) {
 void server::receive_message() {
 	std::cout << "||||||||||RECVDATA||||||||||" << std::endl;
 	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["
-			  << _eventlist.ident << "]";//test
+			  << _eventlist.ident << "]\n";//test
 	if ((size_t) _eventlist.data == 0) {
 		if ((_eventlist.flags & EV_EOF) == EV_EOF)
 			close_connection(_connections[(size_t) _eventlist.ident]);
@@ -130,7 +132,7 @@ void server::receive_message() {
 	}
 	_connections[_eventlist.ident]->_receive_buffer.append(buffer,
 														   _eventlist.data);
-	std::cout << "[" << buffer  << "]"<< std::endl;//test
+	std::cout << "[" << _connections[_eventlist.ident]->_receive_buffer << "]"<< std::endl;//test
 	free(buffer);
 	parse(this, _connections[_eventlist.ident]);
 }
@@ -139,7 +141,7 @@ void server::send_message() {
 	client *tmp = _connections[_eventlist.ident];
 	std::cout << "||||||||||SENDDATA||||||||||" << std::endl;
 	std::cout << "sent message on fd : " << tmp->_fd << std::endl;//test
-	std::cout << "[" + tmp->_send_buffer + "]" << std::endl;//test
+	std::cout << "[" << tmp->_send_buffer << "]" << std::endl;//test
 	int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(),
 					 tmp->_send_buffer.size(), 0);
 	if (nbyte <
