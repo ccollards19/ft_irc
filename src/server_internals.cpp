@@ -1,8 +1,4 @@
 #include "irc.hpp"
-#include <iostream>
-#include <iterator>
-#include <map>
-#include <netdb.h>
 
 //to be expanded as needed
 void server::safe_shutdown(int exit_code) {
@@ -79,35 +75,6 @@ void server::regular_tasks() {
 }
 
 
-void parse(struct server *s, struct client *c) {
-	unsigned long pos;
-	while ((pos = c->_receive_buffer.find('\n')) != std::string::npos) {
-		// std::cout << "PARSING: " + c->_receive_buffer << "\n";
-		Message msg((c->_receive_buffer).substr(0, pos + 1), s->_cmds);
-		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
-		c->_receive_buffer.erase(0, (pos + 1));
-		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
-		// std::cout << "command : [" << msg.getCommand() << "] "<< msg.getCommandName() << "\n";
-		// msg.showContent();
-		switch (msg.getCommand()) {
-			case KICK:s->kill(msg, c);break;
-			case TOPIC:s->topic(msg, c);break;
-			case MODE:s->mode(msg, c);break;
-				//case INVITE: s->invite(msg, c);break;
-			case PRIVMSG: s->privmsg(msg, c);break;
-			case JOIN:s->join(msg, c);break;
-			case PING:s->ping(msg, c);break;
-			case PONG:s->pong(msg, c);break;
-			case NICK:s->nick(msg, c);break;
-				//case BAN: s->ban(msg, c);break;
-			case PASS: s->pass(msg, c);break;
-			case USER:s->user(msg, c);break;
-			case PART:s->part(msg, c);break;
-			default:break;
-		}
-	}
-}
-
 void server::receive_message() {
 	std::cout << "||||||||||RECVDATA||||||||||" << std::endl;
 	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["
@@ -177,4 +144,40 @@ void server::add_connection() {
 	read_set(newfd);
 	write_unset(newfd);
 	update_timer(newfd, CLIENT_TTL);
+}
+
+// event loop using kevents
+void server::run()
+{
+	int nbr_event;
+	while (1)
+	{
+		nbr_event = 0;
+		nbr_event = kevent(_kq, NULL, 0, &_eventlist, 1, NULL);// &_timeout);
+		if (nbr_event == -1)
+		{
+			std::cerr<<"kqueue error durring runtime"<<std::endl<<"error: "<<strerror(errno)<<std::endl;
+			safe_shutdown(EXIT_FAILURE);
+		}
+		else if (nbr_event == 0)
+			continue;
+		else if ( _eventlist.ident == STDIN_FILENO)// events on standard input
+			server_admin();
+		else if ( _eventlist.ident == (uintptr_t)_socketfd)// events on server socket
+		{
+			if (_eventlist.filter == EVFILT_READ)
+				this->add_connection();
+			else if (_eventlist.filter == EVFILT_TIMER)
+				this->regular_tasks();	
+		}
+		else // events on a client socket
+		{
+			if (_eventlist.filter == EVFILT_WRITE)
+				this->send_message();
+			else if (_eventlist.filter == EVFILT_READ)
+				this->receive_message();
+			else if (_eventlist.filter == EVFILT_TIMER)
+        this->check_connection(_connections[_eventlist.ident]);
+		}
+	}
 }

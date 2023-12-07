@@ -15,6 +15,7 @@
 #include <ctime>
 #include <unistd.h>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <map>
 #include <vector>
@@ -179,6 +180,7 @@ struct server
 };
 
 
+void parse(struct server *s, struct client *c);
 //CONTROL PANEL
 void send_reply(struct server &s,struct client &c, std::string message);
 void send_error(struct server &s,struct client &c, std::string message);

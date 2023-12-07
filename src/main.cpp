@@ -1,43 +1,4 @@
 #include "irc.hpp"
-#include <cstdio>
-#include <string>
-
-// event loop using kevents
-void server::run()
-{
-	int nbr_event;
-	while (1)
-	{
-		nbr_event = 0;
-		nbr_event = kevent(_kq, NULL, 0, &_eventlist, 1, NULL);// &_timeout);
-		if (nbr_event == -1)
-		{
-			std::cerr<<"kqueue error durring runtime"<<std::endl<<"error: "<<strerror(errno)<<std::endl;
-			safe_shutdown(EXIT_FAILURE);
-		}
-		else if (nbr_event == 0)
-			continue;
-		else if ( _eventlist.ident == STDIN_FILENO)// events on standard input
-			server_admin();
-		else if ( _eventlist.ident == (uintptr_t)_socketfd)// events on server socket
-		{
-			if (_eventlist.filter == EVFILT_READ)
-				this->add_connection();
-			else if (_eventlist.filter == EVFILT_TIMER)
-				this->regular_tasks();	
-		}
-		else // events on a client socket
-		{
-			if (_eventlist.filter == EVFILT_WRITE)
-				this->send_message();
-			else if (_eventlist.filter == EVFILT_READ)
-				this->receive_message();
-			else if (_eventlist.filter == EVFILT_TIMER)
-        this->check_connection(_connections[_eventlist.ident]);
-		}
-	}
-}
-
 
 static void init_cmds_map(std::map<std::string, int> &_cmds)
 {
@@ -59,23 +20,25 @@ static void init_cmds_map(std::map<std::string, int> &_cmds)
 
 void server::network_init(char *port)
 {
+  // init a addrinfo struct to retrieve necesary infos
   _res_start = NULL;
   memset(&_hints, 0, sizeof(_hints)); // make sure the struct is empty
   _hints.ai_family = AF_UNSPEC;     // IPv4 or IPv6
   _hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
   _hints.ai_protocol = IPPROTO_TCP; // TCP protocol
   _hints.ai_flags = AI_PASSIVE;     // INADDR_ANY kinda
+  // fill the res with the necesary infos
   if (getaddrinfo(NULL, port, &_hints, &_res) != 0) {
 		std::cerr<<"getaddrinfo error durring server startup "<<std::endl
 			<<"error: "<<strerror(errno)<<std::endl;
 		safe_shutdown(EXIT_FAILURE);
   }
-  _res_start = _res;
+  _res_start = _res; // keep track of linked list start to free it properly
+  // loop through the linked list to find an ip connection
   while (_res->ai_family != PF_INET && _res->ai_family != PF_INET6 && _res->ai_next)
     _res = _res->ai_next;
   if (_res == NULL) {
-		std::cerr<<"no ip socket durring server startup "<<std::endl
-			<<"error: "<<strerror(errno)<<std::endl;
+		std::cerr<<"no IP socket found durring server startup "<<std::endl;
 		safe_shutdown(EXIT_FAILURE);
   }
 	//create the server socket and bind it

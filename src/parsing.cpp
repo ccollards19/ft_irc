@@ -99,6 +99,36 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 	}
 }
 
+void parse(struct server *s, struct client *c) {
+	unsigned long pos;
+	while ((pos = c->_receive_buffer.find('\n')) != std::string::npos) {
+		// std::cout << "PARSING: " + c->_receive_buffer << "\n";
+		Message msg((c->_receive_buffer).substr(0, pos + 1), s->_cmds);
+		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
+		c->_receive_buffer.erase(0, (pos + 1));
+		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
+		// std::cout << "command : [" << msg.getCommand() << "] "<< msg.getCommandName() << "\n";
+		// msg.showContent();
+		switch (msg.getCommand()) {
+			case KICK:s->kill(msg, c);break;
+			case TOPIC:s->topic(msg, c);break;
+			case MODE:s->mode(msg, c);break;
+				//case INVITE: s->invite(msg, c);break;
+			case PRIVMSG: s->privmsg(msg, c);break;
+			case JOIN:s->join(msg, c);break;
+			case PING:s->ping(msg, c);break;
+			case PONG:s->pong(msg, c);break;
+			case NICK:s->nick(msg, c);break;
+				//case BAN: s->ban(msg, c);break;
+			case PASS: s->pass(msg, c);break;
+			case USER:s->user(msg, c);break;
+			case PART:s->part(msg, c);break;
+			default:break;
+		}
+	}
+}
+
+
 //
 //void display(std::vector<std::string> s)
 //{
