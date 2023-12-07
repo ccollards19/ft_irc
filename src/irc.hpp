@@ -137,6 +137,8 @@ struct server
 	int 			_kq;
 	//member functions
 	void			init(char **argv);
+  void      network_init(char *port);
+  void      kevent_init();
 	void			run();
 	void			server_admin();
 	void			add_connection();
