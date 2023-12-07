@@ -1,6 +1,6 @@
 #include "irc.hpp"
 
-//to be expanded as needed
+//free the ressources and exit
 void server::safe_shutdown(int exit_code) {
 	std::cout << "||||||||||SHUTDOWN||||||||||" << std::endl;
 	if (_socketfd)
@@ -21,8 +21,7 @@ void server::safe_shutdown(int exit_code) {
 // read the standard output and process commands only quits
 void server::server_admin() {
 	std::cout << "||||||||||SERVADMN||||||||||" << std::endl;
-	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["
-			  << _eventlist.ident << "]\n";//test
+	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
 	if ((size_t) _eventlist.data == 0)
 		safe_shutdown(EXIT_SUCCESS);
 	char *buffer = (char *) malloc(
@@ -77,8 +76,7 @@ void server::regular_tasks() {
 
 void server::receive_message() {
 	std::cout << "||||||||||RECVDATA||||||||||" << std::endl;
-	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["
-			  << _eventlist.ident << "]\n";//test
+	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
 	if ((size_t) _eventlist.data == 0) {
 		if ((_eventlist.flags & EV_EOF) == EV_EOF)
 			close_connection(_connections[(size_t) _eventlist.ident]);
@@ -91,14 +89,11 @@ void server::receive_message() {
 		safe_shutdown(EXIT_FAILURE);
 	}
 	size_t nbyte = recv(_eventlist.ident, buffer, (size_t) _eventlist.data, 0);
-	if (nbyte <
-		0) // EAGAIN should have been used here but the subject does not allow for it
-	{
+	if (nbyte < 0) {
 		free(buffer);
 		return;
 	}
-	_connections[_eventlist.ident]->_receive_buffer.append(buffer,
-														   _eventlist.data);
+	_connections[_eventlist.ident]->_receive_buffer.append(buffer, _eventlist.data);
 	std::cout << "[" << _connections[_eventlist.ident]->_receive_buffer << "]"<< std::endl;//test
 	free(buffer);
 	parse(this, _connections[_eventlist.ident]);
@@ -123,7 +118,6 @@ void server::send_message() {
 // add a client (not a user yet)
 void server::add_connection() {
 	std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
-	std::cout << "new connection" << std::endl;//test
   client *new_client = new(std::nothrow) client();
 	if (new_client == NULL) {
 		std::cerr << "memory error when adding new connection " << std::endl;

@@ -109,7 +109,6 @@ struct client
 	//buffers
 	std::string _send_buffer;
 	std::string _receive_buffer;
-	const std::string& getNickname() const;
 	bool    isRegistered();
 	bool isChanop(channel *c);
 	bool isMember(channel *c);

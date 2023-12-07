@@ -109,21 +109,31 @@ void parse(struct server *s, struct client *c) {
 		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
 		// std::cout << "command : [" << msg.getCommand() << "] "<< msg.getCommandName() << "\n";
 		// msg.showContent();
-		switch (msg.getCommand()) {
-			case KICK:s->kill(msg, c);break;
-			case TOPIC:s->topic(msg, c);break;
-			case MODE:s->mode(msg, c);break;
-				//case INVITE: s->invite(msg, c);break;
-			case PRIVMSG: s->privmsg(msg, c);break;
-			case JOIN:s->join(msg, c);break;
-			case PING:s->ping(msg, c);break;
-			case PONG:s->pong(msg, c);break;
-			case NICK:s->nick(msg, c);break;
-				//case BAN: s->ban(msg, c);break;
-			case PASS: s->pass(msg, c);break;
-			case USER:s->user(msg, c);break;
-			case PART:s->part(msg, c);break;
-			default:break;
+		if (!c->_isRegistered) {
+			switch (msg.getCommand()) {
+				case NICK:s->nick(msg, c);break;
+				case PASS: s->pass(msg, c);break;
+				case USER:s->user(msg, c);break;
+				default:break;
+			}
+		}
+		else {
+			switch (msg.getCommand()) {
+				case KICK:s->kill(msg, c);break;
+				case TOPIC:s->topic(msg, c);break;
+				case MODE:s->mode(msg, c);break;
+					  //case INVITE: s->invite(msg, c);break;
+				case PRIVMSG: s->privmsg(msg, c);break;
+				case JOIN:s->join(msg, c);break;
+				case PING:s->ping(msg, c);break;
+				case PONG:s->pong(msg, c);break;
+				case NICK:s->nick(msg, c);break;
+					  //case BAN: s->ban(msg, c);break;
+				case PASS: s->pass(msg, c);break;
+				case USER:s->user(msg, c);break;
+				case PART:s->part(msg, c);break;
+				default:break;
+			}
 		}
 	}
 }
