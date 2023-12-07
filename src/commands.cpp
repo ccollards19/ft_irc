@@ -121,10 +121,9 @@ void server::nick(Message &m, struct client *client){
 
 //                  USER
 
-void server::user(Message &m, client *client){
+void server::user(Message &m, client *client) {
 	std::vector<std::string> params = m.getContent();
 	if (params.size() < 4) {
-    std::cout << "test\n";
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
     return;
   }
@@ -164,7 +163,8 @@ void server::pong(Message &m, struct client *client)
 
 //                  OPER
 
-void server::oper(Message &m, client *client) {
+void server::oper(Message &m, client *client)
+{
 	std::vector<std::string> params = m.getContent();
 	if (params.size() < 3)
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
@@ -621,11 +621,13 @@ void	server::privmsg(Message &m, client *client) {
 
 //				QUIT
 
-void	server::quit(Message &m, client *quitting_client) {
+void	server::quit(Message &m, client *client)
+{
 	std::vector<std::string> params = m.getContent();
-	std::string	msg = params[1];
-	std::string quit_message = "QUIT :" + msg;
-	close_connection(quitting_client);
-    for (std::map<std::string, client *>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it)
+	std::string quit_message = ":" + client->_nickname + "!" + client->_username + "@" + _servername + "QUIT";
+  if (params.size() > 0)
+	  quit_message.append( " :"+ params[1]);
+	close_connection(client);
+    for (std::map<std::string, struct client*>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it)
         send_reply(*this, *(it->second), quit_message);
 }

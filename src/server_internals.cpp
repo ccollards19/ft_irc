@@ -10,7 +10,7 @@ void server::safe_shutdown(int exit_code) {
 	std::map<int, client *>::iterator end = _connections.end();
 	for (std::map<int, client *>::iterator it = _connections.begin(); it != end; it++) {
 		close(it->second->_fd);
-    std::cout << "close" << it->second->_fd << std::endl;
+    std::cout << "close connection on fd : " << it->second->_fd << std::endl;
 		delete (it->second);
 	}
   if (_res_start)
@@ -19,7 +19,8 @@ void server::safe_shutdown(int exit_code) {
 }
 
 // read the standard output and process commands only quits
-void server::server_admin() {
+void server::server_admin() 
+{
 	std::cout << "||||||||||SERVADMN||||||||||" << std::endl;
 	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
 	if ((size_t) _eventlist.data == 0)
@@ -45,22 +46,22 @@ void server::server_admin() {
 	free(buffer);
 }
 
-void server::check_connection(struct client *c) {
-	(void) c;
-	/*std::cout<<"fd timer "<<c->_fd<<std::endl;//test
+void server::check_connection(struct client *c) 
+{
+	std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
+	std::cout<<"timer on fd : "<<c->_fd<<std::endl;//test
 	if (c->_ping)
 	  close_connection(c);
 	else
 	{
-	  c->_send_buffer.append("PING\n");
 	  c->_ping = 1;
-    c->_sockaddr.
-	  write_set(c->_fd);
+    send_reply( *this , *c, "PING :" + _servername);
 	  update_timer(c->_fd, CLIENT_TTL);
-	}*/
+	}
 }
 
-void server::close_connection(client *client) {
+void server::close_connection(client *client)
+{
 	close(client->_fd);
 	_connections.erase(client->_fd);
 	//_nick_map.erase(client->_nickname);
@@ -68,13 +69,15 @@ void server::close_connection(client *client) {
 	delete client;
 }
 
-void server::regular_tasks() {
+void server::regular_tasks() 
+{
 	//std::cout<<"regular tasks"<<std::endl;//test
 	//TODO add nick cleaning 
 }
 
 
-void server::receive_message() {
+void server::receive_message()
+{
 	std::cout << "||||||||||RECVDATA||||||||||" << std::endl;
 	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
 	if ((size_t) _eventlist.data == 0) {
@@ -99,7 +102,8 @@ void server::receive_message() {
 	parse(this, _connections[_eventlist.ident]);
 }
 
-void server::send_message() {
+void server::send_message() 
+{
 	client *tmp = _connections[_eventlist.ident];
 	std::cout << "||||||||||SENDDATA||||||||||" << std::endl;
 	std::cout << "sent message on fd : " << tmp->_fd << std::endl;//test
@@ -116,7 +120,8 @@ void server::send_message() {
 }
 
 // add a client (not a user yet)
-void server::add_connection() {
+void server::add_connection() 
+{
 	std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
   client *new_client = new(std::nothrow) client();
 	if (new_client == NULL) {
@@ -144,12 +149,10 @@ void server::add_connection() {
 void server::run()
 {
 	int nbr_event;
-	while (1)
-	{
+	while (1) {
 		nbr_event = 0;
 		nbr_event = kevent(_kq, NULL, 0, &_eventlist, 1, NULL);// &_timeout);
-		if (nbr_event == -1)
-		{
+		if (nbr_event == -1) {
 			std::cerr<<"kqueue error durring runtime"<<std::endl<<"error: "<<strerror(errno)<<std::endl;
 			safe_shutdown(EXIT_FAILURE);
 		}
@@ -157,21 +160,19 @@ void server::run()
 			continue;
 		else if ( _eventlist.ident == STDIN_FILENO)// events on standard input
 			server_admin();
-		else if ( _eventlist.ident == (uintptr_t)_socketfd)// events on server socket
-		{
+		else if ( _eventlist.ident == (uintptr_t)_socketfd) { // events on server socket 
 			if (_eventlist.filter == EVFILT_READ)
-				this->add_connection();
+				add_connection();
 			else if (_eventlist.filter == EVFILT_TIMER)
-				this->regular_tasks();	
+				regular_tasks();	
 		}
-		else // events on a client socket
-		{
+		else { // events on a client socket
 			if (_eventlist.filter == EVFILT_WRITE)
-				this->send_message();
+				send_message();
 			else if (_eventlist.filter == EVFILT_READ)
-				this->receive_message();
+				receive_message();
 			else if (_eventlist.filter == EVFILT_TIMER)
-        this->check_connection(_connections[_eventlist.ident]);
+        check_connection(_connections[_eventlist.ident]);
 		}
 	}
 }
