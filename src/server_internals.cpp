@@ -14,6 +14,11 @@ void server::safe_shutdown(int exit_code) {
     std::cout << "close connection on fd : " << it->second->_fd << std::endl;
 		delete (it->second);
 	}
+  std::vector<channel *>::iterator chan_end = _chan_list.end();
+	for (std::vector<channel *>::iterator it = _chan_list.begin(); it != chan_end; it++) {
+    std::cout << "close channel : " << (*it)->_name << std::endl;
+		delete (*it);
+	}
   if (_res_start)
     freeaddrinfo(_res_start);
 	exit(exit_code);
