@@ -1,4 +1,5 @@
 #include "irc.hpp"
+#include <vector>
 
 //free the ressources and exit
 void server::safe_shutdown(int exit_code) {
@@ -50,10 +51,11 @@ void server::check_connection(struct client *c)
 {
 	std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
 	std::cout<<"timer on fd : "<<c->_fd<<std::endl;//test
-	if (c->_ping)
-	  close_connection(c);
-	else
-	{
+	if (c->_ping) {
+    Message msg("", _cmds);
+    quit(msg, c);
+  }
+	else {
 	  c->_ping = 1;
     send_reply( *this , *c, "PING :" + _servername);
 	  update_timer(c->_fd, CLIENT_TTL);
@@ -64,7 +66,11 @@ void server::close_connection(client *client)
 {
 	close(client->_fd);
 	_connections.erase(client->_fd);
-	//_nick_map.erase(client->_nickname);
+  std::vector<channel *>::iterator end = _chan_list.end();
+  for (std::vector<channel *>::iterator it = _chan_list.begin(); it != end; it++) {
+    (*it)->removeMember(client); 
+  }
+	_nick_map.erase(client->_nickname);
 	//TODO remove from channels and nick cleaning when implemented
 	delete client;
 }

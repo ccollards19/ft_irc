@@ -415,6 +415,12 @@ void	channel::removeInvited(struct client *client) {
 		_invite_list.erase(i);
 }
 
+void	channel::removeMember(struct client *client) {
+	std::vector<struct client*>::iterator i;
+	if ((i = std::find(_members.begin(), _members.end(), client)) != _members.end())
+		_members.erase(i);
+}
+
 void channel::addClient(client *client) {
 	_members.push_back(client);
 }

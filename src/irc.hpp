@@ -84,6 +84,7 @@ struct channel
 	std::string _pwd;
 	bool isInvited(client *c);
 	void removeInvited(struct client *client);
+	void removeMember(struct client *client);
 	void addClient(client *client);
 	bool isModeSet(char mode);
 
