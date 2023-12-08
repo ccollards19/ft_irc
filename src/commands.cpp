@@ -1,4 +1,5 @@
 #include "irc.hpp"
+#include <string>
 
 //                 PART
                  
@@ -141,8 +142,8 @@ void server::ping(Message &m, struct client *client)
 }
 
   //                 PONG 
-  void server::pong(Message &m, struct client *client)
-  {
+void server::pong(Message &m, struct client *client)
+{
     std::vector<std::string> params = m.getContent();
   if (params.size() < 1)
     reply(m, *this, *client, ERR_NOORIGIN);
@@ -598,8 +599,43 @@ void	server::privmsg(Message &m, client *client) {
 	}
 }
 
-//				QUIT
+//				KICK
+void	server::kick(Message &m, struct client *client)
+{
+  std::vector<std::string> params = m.getContent();
+  int size = params.size();
+  if (size < 2) {
+    reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+    return ;
+  }
+  std::vector<struct channel *>::iterator chanit = getChannel(params[0]);
+  if (chanit == _chan_list.end()) {
+    reply(m, *this, *client, ERR_NOSUCHCHANNEL);
+    return ;
+  }
+  struct channel *chan = *chanit;
+  if (!client->isMember(chan)) {
+    reply(m, *this, *client, ERR_NOTONCHANNEL);
+    return ;
+  }
+  if (!client->isChanop(chan)) {
+    reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+    return ;
+  }
+  std::map<std::string, struct client *>::iterator target = _nick_map.find(params[1]);
+  if (target == _nick_map.end() || !target->second->isMember(chan)) {
+    reply(m, *this, *client, ERR_USERNOTINCHANNEL);
+    return ;
+  }
+  chan->removeMember(target->second);
+  std::string kick_message = ":" + client->_nickname + "!" + client->_username + "@" + client->_hostname + " KICK " + chan->_name + " " + target->second->_nickname;
+  if (size > 2) 
+    kick_message.append(" :" + params.back());
+  for (std::vector<struct client *>::iterator it = chan->_members.begin(); it != chan->_members.end(); ++it)
+    send_reply(*this, **it, kick_message);
+}
 
+//				QUIT
 void	server::quit(Message &m, client *client)
 {
   std::vector<std::string> params = m.getContent();

@@ -173,6 +173,7 @@ struct server
 	void user(Message &m, struct client *client);
 	void oper(Message &m, struct client *client);
 	void kill(Message &m, struct client *client);
+  void kick(Message &m, struct client *client);
 	void mode(Message &m, struct client *client);
 	void join(Message &m, struct client *client);
 	void topic(Message &m, struct client *client);
