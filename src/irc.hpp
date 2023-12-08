@@ -95,11 +95,11 @@ struct client
 	//networking
 	int			_fd;
 	bool    _ping;
-	bool _isRegistered;
-	bool _is_oper;
   struct sockaddr _sockaddr;
   socklen_t _socklen;
 	//user related
+	bool _isRegistered;
+	bool _is_oper;
 	std::string _nickname;
 	std::string _username;
 	std::string _hostname;
@@ -110,6 +110,7 @@ struct client
 	//buffers
 	std::string _send_buffer;
 	std::string _receive_buffer;
+	//member functions  
 	bool    isRegistered();
 	bool isChanop(channel *c);
 	bool isMember(channel *c);
@@ -158,6 +159,13 @@ struct server
 	void			send_message();
 	void			receive_message();
 	void register_client(Message &m, struct client *client);
+	bool isAchannel(std::string name);
+	std::vector<struct channel*>::iterator getChannel(std::string channelName);
+	bool checkChannel(std::string channelName);
+	struct channel *createChannel(std::string channelName, struct client *client);
+	void joinMessage(channel *target, client *c);
+	void chanMessage(channel *target, client *c, std::string msg);
+  //commands
 	void ping(Message &m, struct client *client);
 	void pong(Message &m, struct client *client);
 	void pass(Message &m, struct client *client);
@@ -171,12 +179,6 @@ struct server
 	void quit(Message &m, client *quitting_client);
 	void privmsg(Message &m, client *client);
 	void part(Message &m, client *client);
-	bool isAchannel(std::string name);
-	std::vector<struct channel*>::iterator getChannel(std::string channelName);
-	bool checkChannel(std::string channelName);
-	struct channel *createChannel(std::string channelName, struct client *client);
-	void joinMessage(channel *target, client *c);
-	void chanMessage(channel *target, client *c, std::string msg);
 };
 
 

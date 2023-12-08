@@ -107,10 +107,12 @@ void server::receive_message()
 		free(buffer);
 		return;
 	}
-	_connections[_eventlist.ident]->_receive_buffer.append(buffer, _eventlist.data);
-	std::cout << "[" << _connections[_eventlist.ident]->_receive_buffer << "]"<< std::endl;//test
+  client *client = _connections[_eventlist.ident];
+  update_timer(client->_fd, CLIENT_TTL);
+	client->_receive_buffer.append(buffer, _eventlist.data);
+	std::cout << "[" << client->_receive_buffer << "]"<< std::endl;//test
 	free(buffer);
-	parse(this, _connections[_eventlist.ident]);
+	parse(this, client);
 }
 
 void server::send_message() 

@@ -142,23 +142,21 @@ void server::user(Message &m, client *client) {
 //                  PING
 void server::ping(Message &m, struct client *client)
 {
-	std::vector<std::string> params = m.getContent();
-  if (params.size() > 1)
-    reply(m, *this, *client, ERR_NOSUCHSERVER);
-  else
-	  send_reply(*this, *client, ":"+ _servername +" PONG \n");
-	update_timer(client->_fd, CLIENT_TTL);
-}
+    std::vector<std::string> params = m.getContent();
+    if (params.size() > 1)
+      reply(m, *this, *client, ERR_NOSUCHSERVER);
+    else
+      send_reply(*this, *client, ":"+ _servername +" PONG \n");
+  }
 
-//                 PONG 
-void server::pong(Message &m, struct client *client)
-{
-	std::vector<std::string> params = m.getContent();
+  //                 PONG 
+  void server::pong(Message &m, struct client *client)
+  {
+    std::vector<std::string> params = m.getContent();
   if (params.size() > 1)
     reply(m, *this, *client, ERR_NOSUCHSERVER);
   else
     client->_ping = 0;
-  update_timer(client->_fd, CLIENT_TTL);
 }
 
 //                  OPER
