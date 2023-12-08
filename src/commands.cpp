@@ -1,39 +1,31 @@
 #include "irc.hpp"
-#include <algorithm>
-#include <iostream>
-#include <iterator>
 
 //                 PART
                  
 void server::part(Message &m, struct client *client)
 {
 	std::vector<std::string> params = m.getContent();
-	if (params.size() < 1)
-	{
+	if (params.size() < 1) {
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
 		return ;
 	}
 	std::string channel_name = params[0];
-	if (!checkChannel(channel_name))
-	{
+	if (!checkChannel(channel_name)) {
 		reply(m, *this, *client, ERR_NOSUCHCHANNEL);
 		return ;
 	}
 	struct channel *chan = *getChannel(channel_name);
-	if (!client->isMember(chan))
-	{
+	if (!client->isMember(chan)) {
 		reply(m, *this, *client, ERR_NOTONCHANNEL);
 		return ;
 	}
-	if (params.size() == 1)
-	{
+	if (params.size() == 1)	{
 		for (std::vector<struct client *>::iterator it = chan->_members.begin(); it != chan->_members.end() ; ++it) {
 			std::cout << "sending message to " << (*it)->_nickname << std::endl;
 			send_reply(*this, **it, ":" + client->_nickname + "!" + client->_username + "@" + _servername + " PART " + chan->_name);
 		}
 	}
-	else
-	{
+	else {
 		std::string part_msg = params[1];
 		for (std::vector<struct client *>::iterator it = chan->_members.begin(); it != chan->_members.end() ; ++it) {
 			std::cout << "sending message to " << (*it)->_nickname << std::endl;
@@ -57,7 +49,8 @@ void server::register_client(Message &m, struct client *client)
 
 //                 PASS
 
-void server::pass(Message &m, struct client *client) {
+void server::pass(Message &m, struct client *client)
+{
   std::vector<std::string> params = m.getContent();
   std::cout<<params[0] + "=" + _password <<"\n";
   if (params.size() < 1)
@@ -75,15 +68,14 @@ void server::pass(Message &m, struct client *client) {
 
 //                  NICK
 
-void server::nick(Message &m, struct client *client){
+void server::nick(Message &m, struct client *client)
+{
 	std::vector<std::string> params = m.getContent();
-	if (params.size() == 0)
-	{
+	if (params.size() == 0) {
 		reply(m, *this, *client, ERR_NONICKNAMEGIVEN);
 		return ;
 	}
-	if (params.size() > 1)
-	{
+	if (params.size() > 1) {
 		reply(m, *this, *client, ERR_ERRONEUSNICKNAME);
 		return ;
 	}
@@ -93,14 +85,12 @@ void server::nick(Message &m, struct client *client){
 	}
 	bool hasNick = false;
 	std::map<std::string, struct client*>::iterator i;
-	if (!_nick_map.empty())
-	{
+	if (!_nick_map.empty())	{
 		i = _nick_map.begin();
 		std::cout << "debug\n";
 		for ( ; i != _nick_map.end() ; ++i) {
 			std::cout << "nick: "<< i->second->_nickname << "\n";
-			if (client == i->second)
-			{
+			if (client == i->second) {
 				hasNick = true;
 				break ;
 			}
@@ -108,8 +98,7 @@ void server::nick(Message &m, struct client *client){
 		}
 	}
 	std::cout << "debug 2\n";
-	if (hasNick)
-	{
+	if (hasNick) {
 		send_reply(*this, *client, ":" + i->second->_nickname + "!" + i->second->_username + "@" + _servername + " NICK :" + params[0]);
 		_nick_map.erase(i);
 	}
@@ -121,7 +110,8 @@ void server::nick(Message &m, struct client *client){
 
 //                  USER
 
-void server::user(Message &m, client *client) {
+void server::user(Message &m, client *client) 
+{
 	std::vector<std::string> params = m.getContent();
 	if (params.size() < 4) {
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
@@ -132,9 +122,8 @@ void server::user(Message &m, client *client) {
     return;
   }
 	client->_username = params[0];
-  //TODO set mode
 	client->_realname = params[3];
-	client->_hostname = params[3];
+	client->_hostname = _servername;
   register_client(m, client);
 }
 
@@ -177,7 +166,8 @@ void server::oper(Message &m, client *client)
 
 //                  KILL
 
-void server::kill(Message &m, client *client) {
+void server::kill(Message &m, client *client) 
+{
 	std::vector<std::string> params = m.getContent();
 	int nosuchnick = 0;
 	if (!client->_is_oper)
@@ -451,24 +441,20 @@ bool	server::checkChannel(std::string channelName){
 	return (false);
 }
 
-struct channel *server::createChannel(std::string channelName, struct client *client){
-
-	if (checkChannel(channelName))
-		return (*getChannel(channelName));
-	else
-	{
-		channel *chan = new channel();
-		chan->_name = channelName;
-		chan->_operators.push_back(client);
-		chan->_creator = client;
-		chan->_prefix = '#';
-		chan->_chan_id = channelName;
-		chan->_capacity = 0;
-		_chan_list.push_back(chan);
-		return _chan_list.back();
-	}
-
-	// Message à print. Pas sur de ce que c'est
+struct channel *server::createChannel(std::string channelName, struct client *client)
+{
+  if (checkChannel(channelName))
+    return (*getChannel(channelName));
+  channel *chan = new channel();
+  chan->_name = channelName;
+  chan->_operators.push_back(client);
+  chan->_creator = client;
+  chan->_prefix = '#';
+  chan->_chan_id = channelName;
+  chan->_capacity = 0;
+  _chan_list.push_back(chan);
+  return _chan_list.back();
+  // Message à print. Pas sur de ce que c'est
 }
 
 bool channel::isInvited(client *c) {
@@ -620,18 +606,17 @@ void	server::privmsg(Message &m, client *client) {
 		std::cout << "client message !\n";
 		send_reply(*this, *client, msg);
 	}
-
 }
 
 //				QUIT
 
 void	server::quit(Message &m, client *client)
 {
-	std::vector<std::string> params = m.getContent();
-	std::string quit_message = ":" + client->_nickname + "!" + client->_username + "@" + _servername + "QUIT";
+  std::vector<std::string> params = m.getContent();
+  std::string quit_message = ":" + client->_nickname + "!" + client->_username + "@" + client->_hostname + "QUIT";
   if (params.size() > 0)
-	  quit_message.append( " :"+ params[1]);
-	close_connection(client);
-    for (std::map<std::string, struct client*>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it)
-        send_reply(*this, *(it->second), quit_message);
+    quit_message.append( " :"+ params[1]);
+  close_connection(client);
+  for (std::map<std::string, struct client*>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it)
+    send_reply(*this, *(it->second), quit_message);
 }
