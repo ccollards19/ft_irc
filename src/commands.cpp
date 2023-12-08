@@ -131,18 +131,22 @@ void server::user(Message &m, client *client)
 //                  PING
 void server::ping(Message &m, struct client *client)
 {
-    std::vector<std::string> params = m.getContent();
-    if (params.size() > 1)
-      reply(m, *this, *client, ERR_NOSUCHSERVER);
-    else
-      send_reply(*this, *client, ":"+ _servername +" PONG \n");
-  }
+  std::vector<std::string> params = m.getContent();
+  if (params.size() < 1)
+    reply(m, *this, *client, ERR_NOORIGIN);
+  else if (params.size() > 1 && params[1].compare(_servername))
+    reply(m, *this, *client, ERR_NOSUCHSERVER);
+  else
+    send_reply(*this, *client, ":"+ _servername +" PONG \n");
+}
 
   //                 PONG 
   void server::pong(Message &m, struct client *client)
   {
     std::vector<std::string> params = m.getContent();
-  if (params.size() > 1)
+  if (params.size() < 1)
+    reply(m, *this, *client, ERR_NOORIGIN);
+  else if (params.size() > 1 && params[1].compare(_servername))
     reply(m, *this, *client, ERR_NOSUCHSERVER);
   else
     client->_ping = 0;
@@ -556,20 +560,6 @@ void server::topic(Message &m, client *client)
 		reply(m, *this, *client, ERR_NOSUCHCHANNEL);
 }
 
-
-//			PRIVMSG
-
-// int	server::msg_chan(Message m, client *client) {
-// 	std::vector<std::string> params = m.getContent();
-// 	if (params.size() < 3)
-// 		return (ERR_NEEDMOREPARAMS);
-// 	std::string	msg = params[2];
-//     std::vector<channel>::iterator chan = getChannel(params[1]);
-//     if (isClientInChannel(*chan, client._nickname))
-//         //chan->reply(RPL_PRIVMSG);
-//     else
-//         reply(ERR_CANNOTSENDTOCHANNEL);//Bien ça ?
-// }
 
 void server::chanMessage(channel *target, client *c, std::string msg)
 {
