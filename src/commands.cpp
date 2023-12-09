@@ -207,197 +207,200 @@ bool client::isMember(channel *c){
 	return (i != c->_members.end());
 }
 
+int server::ErrMode(Message &m, client *c, int part, channel *chan)
+{
+	int err = 0;
+	if (part == 1) {
+		std::vector<std::string> params = m.getContent();
+		if (params.size() < 2) {
+			reply(m, *this, *c, ERR_NEEDMOREPARAMS);
+			err = 1;
+		}
+		else if (m.getContent()[1].size() == 2 && m.getContent()[1][1] != 't' && params.size() < 3)
+		{
+			reply(m, *this, *c, ERR_NEEDMOREPARAMS);
+			err = 1;
+		}
+		else if (!isAchannel(params[0])) {
+			reply(m, *this, *c, ERR_NOSUCHCHANNEL);
+			err = 1;
+		}
+	}
+	else if (part == 2) {
+		if (!c->isChanop(chan) && ++err)
+		{
+			reply(m, *this, *c, ERR_CHANOPRIVSNEEDED);
+			err = 1;
+		}
+		else if (!c->isMember(chan))
+		{
+			reply(m, *this, *c, ERR_USERNOTINCHANNEL);
+			err = 1;
+		}
+		else if (m.getContent()[1].size() > 2)
+		{
+			reply(m, *this, *c, ERR_UNKNOWNMODE);
+			err = 1;
+		}
+	}
+	return err;
+}
+void server::modeK(Message &m, client *client, channel *c)
+{
+	std::cout << "In mode K\n";
+
+	std::vector<std::string> params = m.getContent();
+	std::string mode = params[1];
+	if (client->isChanop(c))
+	{
+		if (mode[0] == '+')
+		{
+			if (!c->_mode.find('k'))
+				c->_mode += 'k';
+			c->_pwd = params[2];
+		}
+		if (mode[0] == '-' && c->_mode.find('k'))
+			c->_mode.erase(c->_mode.find('k'));
+	}
+	else
+		reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+}
+
+void server::modeO(Message &m, client *client, channel *c)
+{
+	std::cout << "In mode O\n";
+
+	std::vector<std::string> params = m.getContent();
+	std::string mode = params[1];
+	if (mode[0] == '+')
+	{
+		std::cout << "changing operator\n";
+		if (!client->isChanop(c))
+			reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+		else if (_nick_map.find(params[2]) == _nick_map.end())
+			reply(m, *this, *client, ERR_NOSUCHNICK);
+		else if (!_nick_map[params[2]]->isMember(c))
+			reply(m, *this, *client, ERR_USERNOTINCHANNEL);
+		else
+			c->_operators.push_back(_nick_map[params[2]]);
+	}
+	else if (mode[0] == '-')
+	{
+		struct client *target;
+		if (_nick_map.find(params[2]) == _nick_map.end())
+			reply(m, *this, *client, ERR_NOSUCHNICK);
+		else if (!_nick_map[params[2]]->isMember(c))
+			reply(m, *this, *client, ERR_USERNOTINCHANNEL);
+		else
+			target = _nick_map[params[2]];
+		if (!client->isChanop(c) || target == c->_creator)
+			reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+		else
+			c->_operators.erase(std::find(c->_operators.begin(),c->_operators.end(), target));
+	}
+}
+
+void server::modeI(Message &m, client *client, channel *c)
+{
+	std::cout << "In mode I\n";
+
+	std::vector<std::string> params = m.getContent();
+	std::string mode = params[1];
+	if (!client->isChanop(c))
+		reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+	else
+	{
+		if (mode[0] == '+') {
+			if (!c->_mode.find('i'))
+				c->_mode += 'i';
+			if (_nick_map.find(params[2]) != _nick_map.end() && \
+			std::find(c->_invite_list.begin(), c->_invite_list.end(), \
+			_nick_map[params[2]]) == c->_invite_list.end())
+				c->_invite_list.push_back(_nick_map[params[2]]);
+		}
+		if (mode[0] == '-' && c->_mode.find('i'))
+			c->_mode.erase(c->_mode.find('i'));
+		reply(m, *this, *client, RPL_INVITELIST);
+		reply(m, *this, *client, RPL_ENDOFINVITELIST);
+	}
+}
+
+void server::modeL(Message &m, client *client, channel *c)
+{
+	std::cout << "In mode L\n";
+
+	std::vector<std::string> params = m.getContent();
+	std::string mode = params[1];
+	int size = stoi(params[2]);
+	if (!client->isChanop(c))
+		reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+	else
+	{
+		if (mode[0] == '+')
+		{
+			if (!c->_mode.find('l'))
+				c->_mode += 'l';
+			if (size < 0)
+				c->_capacity = 0;
+			else
+				c->_capacity = size;
+		}
+		if (mode[0] == '-' && c->_mode.find('l'))
+			c->_mode.erase(c->_mode.find('l'));
+	}
+}
+
+void server::modeT(Message &m, client *client, channel *c)
+{
+	std::cout << "In mode T\n";
+	std::vector<std::string> params = m.getContent();
+	std::string mode = params[1];
+	if (!client->isChanop(c))
+		reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+	else
+	{
+		if (mode[0] == '+')
+		{
+			if (!c->_mode.find('t'))
+				c->_mode += 't';
+		}
+		if (mode[0] == '-' && c->_mode.find('t'))
+			c->_mode.erase(c->_mode.find('t'));
+	}
+}
+
 void server::mode(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
-	std::string modes("airoO");
 	std::string chanModes("itkol");
-	if (params[0][0] == '#')//CHANNEL MODE
-	{
-		channel *c;
-		if (params.size() < 2)
-		{
-			reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-			return ;
-		}
-		if (!isAchannel(params[0]))
-		{
-			reply(m, *this, *client, ERR_NOSUCHCHANNEL);
-			return ;
-		}
-		else
-		{
-			c = *getChannel(params[0]);
-			if (!client->isChanop(c))
-			{
-				reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
-				return ;
-			}
-			if (!client->isMember(c))
-			{
-				reply(m, *this, *client, ERR_NOSUCHNICK);
-				return ;
-			}
-			if (params.size() > 2)
-			{
-				std::string mode(params[1]);
-				if (mode[0] == '+')
-				{
-					for (size_t i = 1; i < mode.size() - 1; ++i) {
-						if (chanModes.find(mode[i]))
-						{
-							if (!c->isModeSet(mode[i]))
-								c->_mode += mode[i];
-							if (mode[i] == 'i')
-							{
-								if (params.size() > 2)
-								{
-									if (_nick_map.find(params[2]) != _nick_map.end())
-									{
-										struct client *invited = _nick_map[params[2]];
-										c->_invite_list.push_back(invited);
-									}
-								}
-								else
-								{
-									reply(m, *this, *client, RPL_INVITELIST);
-									reply(m, *this, *client, RPL_ENDOFINVITELIST);
-									return ;
-								}
-							}
-							if (mode[i] == 'k')
-							{
-								if (params.size() > 2)
-								{
-									if (client->isChanop(c))
-										c->_pwd = params[2];
-									else
-									{
-										reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
-										return ;
-									}
-								}
-								else
-								{
-									c->_mode.erase(c->_mode.find(mode[i]));
-									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-									return ;
-								}
-							}
-							if (mode[i] == 'o')
-							{
-								if (!client->isChanop(c))
-								{
-									reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
-									return;
-								}
-								else if (params.size() < 3)
-								{
-									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-									return ;
-								}
-								else if (_nick_map.find(params[2]) == _nick_map.end())
-								{
-									reply(m, *this, *client, ERR_NOSUCHNICK);
-									return ;
-								}
-								else if (!_nick_map[params[2]]->isMember(c))
-								{
-									reply(m, *this, *client, ERR_NOTONCHANNEL);
-									return ;
-								}
-								else
-									c->_operators.push_back(_nick_map[params[2]]);
-							}
-							if (mode[i] == 'l')
-							{
-								if (params.size() < 3)
-								{
-									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-									return ;
-								}
-								int size = stoi(params[2]);
-								if (size < 0)
-									c->_capacity = 0;
-								else
-									c->_capacity = size;
-							}
-						}
-					}
-				}
-				else if (params[1][0] == '-')
-				{
-					for (size_t i = 1; i < mode.size() -1; ++i) {
-						if (chanModes.find(mode[i])) {
-							if (c->_mode.find(mode[i]))
-								c->_mode.erase(c->_mode.find(mode[i]));
-							if (mode[i] == 'o')
-							{
-								struct client *target;
-								if (params.size() < 3)
-								{
-									reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-									return ;
-								}
-								if (_nick_map.find(params[2]) == _nick_map.end())
-								{
-									reply(m, *this, *client, ERR_NOSUCHNICK);
-									return ;
-								}
-								if (!_nick_map[params[2]]->isMember(c))
-								{
-									reply(m, *this, *client, ERR_NOTONCHANNEL);
-									return ;
-								}
-								else
-									target = _nick_map[params[2]];
-								if (!client->isChanop(c) || target == c->_creator)
-								{
-									reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
-									return;
-								}
-								else
-									c->_operators.erase(std::find(c->_operators.begin(),c->_operators.end(), target));
-							}
-						}
-					}
-				}
-				else
-				{
-
-				};
-			}
-			else
-			{
-
-			}
-		}
+	if (ErrMode(m, client, 1, NULL))
+		return ;
+	channel *c;
+	c = *getChannel(params[0]);
+	if (ErrMode(m, client, 2, c))
+		return;
+	std::string mode(params[1]);
+	std::cout << mode <<  "\n";
+	std::cout << chanModes.find(mode[1]) <<  "\n";
+	if (chanModes.find(mode[1]) != std::string::npos && (mode[0] == '-' || mode[0] == '+')) {
+		if (mode[1] == 'i')
+			modeI(m, client, c);
+		else if (mode[1] == 'k')
+			modeK(m, client, c);
+		else if (mode[1] == 'o')
+			modeO(m, client, c);
+		else if (mode[1] == 'l')
+			modeL(m, client, c);
+		else if (mode[1] == 't')
+			modeT(m, client, c);
+		for (std::vector<struct client *>::iterator it = c->_members.begin(); it != c->_members.end(); ++it)
+			send_reply(*this, **it, ":" + _servername + ":" + client->_nickname + " MODE " + c->_name + " " + mode + " " + params[2]);
 	}
-	else//USER MODE
+	else
 	{
-		if (params.size() < 2)
-		{
-			reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-			return ;
-		}
-		if (params[0] != client->_nickname)
-		{
-			reply(m, *this, *client, ERR_USERSDONTMATCH);
-			return ;
-		}
-		if (modes.find(params[1][1]) == std::string::npos)
-		{
-			reply(m, *this, *client, ERR_UMODEUNKNOWNFLAG);
-			return ;
-		}
-		else if (!((params[1] == "+o" || params[1] == "+O") && !client->_is_oper))
-		{
-			if (params[1][0] == '+' && client->_mode.find(params[1][1]) == std::string::npos)
-				client->_mode += params[1][1];
-			else if (params[1][0] == '-')
-				client->_mode.erase(client->_mode.find(params[1][0]));
-		}
-		reply(m, *this, *client, RPL_UMODEIS);
+		m.showContent();
+		reply(m, *this, *client, ERR_UNKNOWNMODE);
 	}
+
 }
 
 //                  Join
@@ -627,12 +630,13 @@ void	server::kick(Message &m, struct client *client)
     reply(m, *this, *client, ERR_USERNOTINCHANNEL);
     return ;
   }
-  chan->removeMember(target->second);
+
   std::string kick_message = ":" + client->_nickname + "!" + client->_username + "@" + client->_hostname + " KICK " + chan->_name + " " + target->second->_nickname;
   if (size > 2) 
     kick_message.append(" :" + params.back());
   for (std::vector<struct client *>::iterator it = chan->_members.begin(); it != chan->_members.end(); ++it)
     send_reply(*this, **it, kick_message);
+  chan->removeMember(target->second);
 }
 
 //				QUIT

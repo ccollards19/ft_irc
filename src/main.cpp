@@ -3,6 +3,7 @@
 static void init_cmds_map(std::map<std::string, int> &_cmds)
 {
 	_cmds["KICK"] = KICK;
+	_cmds["KILL"] = KILL;
 	_cmds["INVITE"] = INVITE;
 	_cmds["TOPIC"] = TOPIC;
 	_cmds["MODE"] = MODE;

@@ -40,7 +40,8 @@ enum cmds
 	BAN,
 	PASS,
 	USER,
-	PART
+	PART,
+	KILL
 };
 
 class Message
@@ -180,6 +181,12 @@ struct server
 	void quit(Message &m, client *quitting_client);
 	void privmsg(Message &m, client *client);
 	void part(Message &m, client *client);
+	int ErrMode(Message &m, client *c, int part, channel *chan);
+	void modeK(Message &m, client *client, channel *c);
+	void modeO(Message &m, client *client, channel *c);
+	void modeI(Message &m, client *client, channel *c);
+	void modeL(Message &m, client *client, channel *c);
+	void modeT(Message &m, client *client, channel *c);
 };
 
 

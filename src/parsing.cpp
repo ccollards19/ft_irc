@@ -14,6 +14,7 @@ std::string Message::getCommandName() {
 		case BAN:return "BAN";
 		case USER:return "USER";
 		case PART:return "PART";
+		case KILL:return "KILL";
 		default: return "";
 	}
 }
@@ -73,6 +74,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		case PASS: _command = PASS; break;
 		case USER : _command = USER;break;
 		case PART : _command = PART;break;
+		case KILL : _command = KILL;break;
 		default: _command = NONE;
 	}
 	if (_command)
@@ -119,7 +121,8 @@ void parse(struct server *s, struct client *c) {
 		}
 		else {
 			switch (msg.getCommand()) {
-				case KICK:s->kill(msg, c);break;
+				case KILL:s->kill(msg, c);break;
+				case KICK:s->kick(msg, c);break;
 				case TOPIC:s->topic(msg, c);break;
 				case MODE:s->mode(msg, c);break;
 					  //case INVITE: s->invite(msg, c);break;

@@ -54,7 +54,7 @@ void server::server_admin()
 
 void server::check_connection(struct client *c) 
 {
-	std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
+	std::cout << "||||||||||CHECKCNCTN||||||||||" << std::endl;
 	std::cout<<"timer on fd : "<<c->_fd<<std::endl;//test
 	if (c->_ping) {
     Message msg("", _cmds);
