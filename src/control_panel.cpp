@@ -34,14 +34,8 @@ std::string get_mask_list(struct server s, std::string name, char flag)
 	std::vector<client *> target;
 	std::vector<client *>::iterator i;
 	(flag == 'b' ? target = chan->_ban_list : target = chan->_invite_list);
-	i = target.begin();
-	while (i != target.end())
-	{
-		if ((*i)->_mode.find(flag))
-		{
-			res += (*i)->_nickname;
-			res += "\n";
-		}
+	for (std::vector<client *>::iterator i = target.begin(); i != target.end() ; ++i) {
+		res += (*i)->_nickname + " ";
 	}
 	return res;
 }

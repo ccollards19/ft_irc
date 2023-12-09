@@ -255,7 +255,7 @@ int server::ErrMode(Message &m, client *c, int part, channel *chan)
 			reply(m, *this, *c, ERR_NEEDMOREPARAMS);
 			err = 1;
 		}
-		else if (m.getContent()[1].size() == 2 && m.getContent()[1][1] != 't' && params.size() < 3)
+		else if (m.getContent()[1].size() == 2 && (m.getContent()[1][1] != 't' && m.getContent()[1][1] != 'i') && params.size() < 3)
 		{
 			reply(m, *this, *c, ERR_NEEDMOREPARAMS);
 			err = 1;
@@ -294,11 +294,11 @@ void server::modeK(Message &m, client *client, channel *c)
 	{
 		if (mode[0] == '+')
 		{
-			if (!c->_mode.find('k'))
+			if (c->_mode.find('k') == std::string::npos)
 				c->_mode += 'k';
 			c->_pwd = params[2];
 		}
-		if (mode[0] == '-' && c->_mode.find('k'))
+		if (mode[0] == '-' && c->_mode.find('k') != std::string::npos)
 			c->_mode.erase(c->_mode.find('k'));
 	}
 	else
@@ -350,14 +350,15 @@ void server::modeI(Message &m, client *client, channel *c)
 	else
 	{
 		if (mode[0] == '+') {
-			if (!c->_mode.find('i'))
+			if (c->_mode.find('i') == std::string::npos)
 				c->_mode += 'i';
-			if (_nick_map.find(params[2]) != _nick_map.end() && \
+
+			if ( params.size() > 3 && _nick_map.find(params[2]) != _nick_map.end() && \
 			std::find(c->_invite_list.begin(), c->_invite_list.end(), \
 			_nick_map[params[2]]) == c->_invite_list.end())
 				c->_invite_list.push_back(_nick_map[params[2]]);
 		}
-		if (mode[0] == '-' && c->_mode.find('i'))
+		if (mode[0] == '-' && c->_mode.find('i') != std::string::npos)
 			c->_mode.erase(c->_mode.find('i'));
 		reply(m, *this, *client, RPL_INVITELIST);
 		reply(m, *this, *client, RPL_ENDOFINVITELIST);
@@ -377,14 +378,14 @@ void server::modeL(Message &m, client *client, channel *c)
 	{
 		if (mode[0] == '+')
 		{
-			if (!c->_mode.find('l'))
+			if (c->_mode.find('l') == std::string::npos)
 				c->_mode += 'l';
 			if (size < 0)
 				c->_capacity = 0;
 			else
 				c->_capacity = size;
 		}
-		if (mode[0] == '-' && c->_mode.find('l'))
+		if (mode[0] == '-' && c->_mode.find('l') != std::string::npos)
 			c->_mode.erase(c->_mode.find('l'));
 	}
 }
@@ -400,14 +401,27 @@ void server::modeT(Message &m, client *client, channel *c)
 	{
 		if (mode[0] == '+')
 		{
-			if (!c->_mode.find('t'))
+			if (c->_mode.find('t') == std::string::npos)
 				c->_mode += 't';
 		}
-		if (mode[0] == '-' && c->_mode.find('t'))
+		if (mode[0] == '-' && c->_mode.find('t') != std::string::npos)
 			c->_mode.erase(c->_mode.find('t'));
 	}
 }
+std::string getModeMessage(std::string _servername, std::string _clientname, std::string _channelname, std::string _modename, int mode, std::vector<std::string> params)
+{
+	std::string res;
 
+	res = ":" + _servername + " :" + _clientname + " MODE " + _channelname + " " + _modename;
+	switch (mode) {
+		case 'i': params.size() > 3 ? res += params[2] : res += "";break;
+		case 't':res += params[2];break;
+		case 'k':res += params[2];break;
+		case 'o':res += params[2];break;
+		case 'l':res += params[2];break;
+	}
+	return res;
+}
 void server::mode(Message &m, client *client){
 	std::vector<std::string> params = m.getContent();
 	std::string chanModes("itkol");
@@ -420,6 +434,7 @@ void server::mode(Message &m, client *client){
 	std::string mode(params[1]);
 	std::cout << mode <<  "\n";
 	std::cout << chanModes.find(mode[1]) <<  "\n";
+	std::string msg;
 	if (chanModes.find(mode[1]) != std::string::npos && (mode[0] == '-' || mode[0] == '+')) {
 		if (mode[1] == 'i')
 			modeI(m, client, c);
@@ -431,15 +446,15 @@ void server::mode(Message &m, client *client){
 			modeL(m, client, c);
 		else if (mode[1] == 't')
 			modeT(m, client, c);
+		msg = getModeMessage(_servername, client->_nickname, c->_name, mode, mode[1], params);
 		for (std::vector<struct client *>::iterator it = c->_members.begin(); it != c->_members.end(); ++it)
-			send_reply(*this, **it, ":" + _servername + ":" + client->_nickname + " MODE " + c->_name + " " + mode + " " + params[2]);
+			send_reply(*this, **it, msg);
 	}
 	else
 	{
 		m.showContent();
 		reply(m, *this, *client, ERR_UNKNOWNMODE);
 	}
-
 }
 
 //                  Join
@@ -552,7 +567,7 @@ void server::join(Message &m, client *client){
 			current->removeInvited(client);
 		}
 		else
-				reply(m, *this, *client, ERR_INVITEONLYCHAN);
+			reply(m, *this, *client, ERR_INVITEONLYCHAN);
 		reply(m, *this, *client, RPL_NAMREPLY);
 		reply(m, *this, *client, RPL_ENDOFNAMES);
 		send_reply(*this, *client, ":" + client->_nickname + " JOIN " + current->_name);
