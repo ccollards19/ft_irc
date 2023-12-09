@@ -180,6 +180,7 @@ struct server
 	void quit(Message &m, client *quitting_client);
 	void privmsg(Message &m, client *client);
 	void part(Message &m, client *client);
+  void invite(Message &m, struct client *client);
 };
 
 
