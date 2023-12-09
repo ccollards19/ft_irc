@@ -1,7 +1,9 @@
 #include "irc.hpp"
+#include <iostream>
 
 static void init_cmds_map(std::map<std::string, int> &_cmds)
 {
+  //init map used for parsing  
 	_cmds["KICK"] = KICK;
 	_cmds["KILL"] = KILL;
 	_cmds["INVITE"] = INVITE;
@@ -90,9 +92,10 @@ void server::init(char **argv)
   _servername = SERVNAME;
 	std::time_t tmp_time = std::time(nullptr);
 	_creation_date.append(std::asctime(std::localtime(&tmp_time)));
-  //create map for parsing
-  init_cmds_map(_cmds);
-	//define the info's relevant to the server socket
+  try { init_cmds_map(_cmds); } catch (std::exception &e) { 
+    std::cerr<< "error when init cmds math: "<<e.what()<<std::endl; 
+		safe_shutdown(EXIT_FAILURE);
+  }
   network_init(argv[1]);
   kevent_init();
 }
@@ -109,6 +112,7 @@ int main(int argc, char **argv)
 	}  
 	server server;
 	server.init(argv);
-	server.run();
+  try { server.run(); } 
+  catch (std::exception &e) { std::cerr<< "error during runtime: "<<e.what()<<std::endl; }
 	server.safe_shutdown(EXIT_SUCCESS);
 }

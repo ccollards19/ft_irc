@@ -174,7 +174,7 @@ struct server
 	void user(Message &m, struct client *client);
 	void oper(Message &m, struct client *client);
 	void kill(Message &m, struct client *client);
-  void kick(Message &m, struct client *client);
+  	void kick(Message &m, struct client *client);
 	void mode(Message &m, struct client *client);
 	void join(Message &m, struct client *client);
 	void topic(Message &m, struct client *client);
@@ -187,6 +187,7 @@ struct server
 	void modeI(Message &m, client *client, channel *c);
 	void modeL(Message &m, client *client, channel *c);
 	void modeT(Message &m, client *client, channel *c);
+  	void invite(Message &m, struct client *client);
 };
 
 

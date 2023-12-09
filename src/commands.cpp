@@ -36,6 +36,45 @@ void server::part(Message &m, struct client *client)
 	chan->_members.erase(std::find(chan->_members.begin(), chan->_members.end(), client));
 }
 
+//                 INVITE
+                 
+void server::invite(Message &m, struct client *client)
+{
+	std::vector<std::string> params = m.getContent();
+	if (params.size() < 2) {
+		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
+		return ;
+	}
+	std::string channel_name = params[1];
+	if (!checkChannel(channel_name)) {
+		reply(m, *this, *client, ERR_NOSUCHCHANNEL);
+		return ;
+	}
+	struct channel *chan = *getChannel(channel_name);
+	if (!client->isMember(chan)) {
+		reply(m, *this, *client, ERR_NOTONCHANNEL);
+		return ;
+	}
+  std::map<std::string, struct client *>::iterator targetit = _nick_map.find(params[0]);
+  if (targetit == _nick_map.end()) {
+		reply(m, *this, *client, ERR_NOSUCHNICK);
+		return ;
+	}
+  struct client *target = targetit->second;
+  if (target->isMember(chan)) {
+		reply(m, *this, *client, ERR_USERONCHANNEL);
+		return ;
+  }
+  if (!client->isChanop(chan)) {
+		reply(m, *this, *client, ERR_CHANOPRIVSNEEDED);
+		return ;
+  }
+	chan->_invite_list.push_back(target);
+	reply(m, *this, *client, RPL_INVITING);
+	reply(m, *this, *target, RPL_INVITING);
+}
+
+
 void server::register_client(Message &m, struct client *client)
 {
   std::cout<< client->_pass << ":" << client->_nickname << ':' <<client->_username <<"\n";
