@@ -129,24 +129,24 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 		case ERR_USERSDONTMATCH  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  ":Can't change mode for other users\n");break;
 
 
-		case RPL_WELCOME : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "Welcome to the Internet Relay Network " + c._nickname + "!" +c._username + "@" + c._hostname + "\n");break;
-		case RPL_YOURHOST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "Your host is " + s._servername + ", running version S19CCKKNER\n");break;
-		case RPL_CREATED : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "This server was created " + s._creation_date + "\n");break;
-		case RPL_MYINFO : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + s._servername + " S19CCKKNER +itkol\n");break;
-		case RPL_BOUNCE : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + s._servername+ " is already full\n");break;
+		case RPL_WELCOME : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "Welcome to the Internet Relay Network " + c._nickname + "!" +c._username + "@" + c._hostname);break;
+		case RPL_YOURHOST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "Your host is " + s._servername + ", running version S19CCKKNER");break;
+		case RPL_CREATED : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + "This server was created " + s._creation_date);break;
+		case RPL_MYINFO : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + s._servername + " S19CCKKNER +itkol");break;
+		case RPL_BOUNCE : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + s._servername+ " is already full");break;
 			//case RPL_EXCEPTLIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + get_channel_list(s, m.getContent()[chan], 'l'));break; //TODO exception list
 		case RPL_INVITELIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + get_mask_list(s,m.getContent()[chan], 'i'));break;
-		case RPL_UNIQOPIS : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " " + get_operator(s, m.getContent()[chan])->_nickname + " \n");break;
-		case RPL_CHANNELMODEIS  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " " + m.getContent()[1] + " " + m.getContent()[2] + "\n");break;
-		case RPL_NOTOPIC  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :No topic is set\n");break;
-		case RPL_TOPIC  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :" + get_channel(s, m.getContent()[chan])->_topic + "\n");break;
-		case RPL_INVITING  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] +" " + m.getContent()[nick]+ "\n");break;
+		case RPL_UNIQOPIS : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " " + get_operator(s, m.getContent()[chan])->_nickname);break;
+		case RPL_CHANNELMODEIS  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " " + m.getContent()[1] + " " + m.getContent()[2]);break;
+		case RPL_NOTOPIC  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :No topic is set");break;
+		case RPL_TOPIC  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :" + get_channel(s, m.getContent()[chan])->_topic);break;
+		case RPL_INVITING  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] +" " + m.getContent()[nick]);break;
 		case RPL_BANLIST  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + get_mask_list(s, m.getContent()[chan], 'b'));break;
-		case RPL_ENDOFBANLIST  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel ban list\n");break;
+		case RPL_ENDOFBANLIST  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel ban list");break;
 			//case RPL_ENDOFEXCEPTLIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel except list\n");break;
-		case RPL_NAMREPLY : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " = " + m.getContent()[chan] + " : "+ getNameList(m, s) +"\n");break;
-		case RPL_ENDOFINVITELIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel invite list.\n");break;
-		case RPL_ENDOFNAMES : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :End of /NAMES list.\n");break;
+		case RPL_NAMREPLY : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " = " + m.getContent()[chan] + " :"+ getNameList(m, s));break;
+		case RPL_ENDOFINVITELIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel invite list.");break;
+		case RPL_ENDOFNAMES : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :End of /NAMES list.");break;
 		default: ;
 	}
 }
