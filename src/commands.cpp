@@ -84,6 +84,7 @@ void server::register_client(Message &m, struct client *client)
 	reply(m, *this, *client, RPL_YOURHOST);
 	reply(m, *this, *client, RPL_CREATED);
 	reply(m, *this, *client, RPL_MYINFO);
+	_nick_map[client->_nickname] = client;
   client->_isRegistered = true;
 }
 
@@ -143,7 +144,6 @@ void server::nick(Message &m, struct client *client)
 		_nick_map.erase(i);
 	}
 	std::cout << "debug 3\n";
-	_nick_map[params[0]] = client;
 	client->_nickname = params[0];
 	register_client(m, client);
 }
