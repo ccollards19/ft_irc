@@ -652,7 +652,15 @@ void	server::privmsg(Message &m, client *client) {
 	else
 	{
 		std::cout << "client message !\n";
-		send_reply(*this, *client, msg);
+		struct client *target;
+		if (_nick_map.find(params[0]) != _nick_map.end())
+		{
+			target = _nick_map[params[0]];
+			send_reply(*this, *target, ":" + client->_nickname + "!" + client->_username + "@"\
+			+ _servername + " PRIVMSG " + client->_nickname + " :" + msg);
+		}
+		else
+			reply(m, *this, *client, ERR_NOSUCHNICK);
 	}
 }
 
