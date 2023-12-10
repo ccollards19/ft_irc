@@ -146,7 +146,7 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 			//case RPL_ENDOFEXCEPTLIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel except list\n");break;
 		case RPL_NAMREPLY : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " = " + m.getContent()[chan] + " :"+ getNameList(m, s));break;
 		case RPL_ENDOFINVITELIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " : End of channel invite list.");break;
-		case RPL_ENDOFNAMES : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :End of /NAMES list.");break;
+		case RPL_ENDOFNAMES : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :End of NAMES list");break;
 		default: ;
 	}
 }

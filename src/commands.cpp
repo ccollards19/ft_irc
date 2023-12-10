@@ -568,9 +568,9 @@ void server::join(Message &m, client *client){
 		}
 		else
 			reply(m, *this, *client, ERR_INVITEONLYCHAN);
+		send_reply(*this, *client, ":" + client->_nickname + " JOIN " + current->_name);
 		reply(m, *this, *client, RPL_NAMREPLY);
 		reply(m, *this, *client, RPL_ENDOFNAMES);
-		send_reply(*this, *client, ":" + client->_nickname + " JOIN " + current->_name);
 	}
 	else if (params[0][0] == '0')//leave all channels
 	{
