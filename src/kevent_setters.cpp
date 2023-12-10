@@ -59,10 +59,6 @@ void server::delete_timer(int fd)
 {
 	EV_SET(&_changelist, fd, EVFILT_TIMER, EV_DELETE , 0, 0, NULL);
 	if (kevent(_kq, &_changelist, 1, NULL, 0, &_timeout) == -1)
-	{
-		std::cerr<<"kevent error when deleting timer"<<std::endl
-			<<"error: "<<strerror(errno)<<std::endl;
-		safe_shutdown(EXIT_FAILURE);
-	}
+		std::cerr<<"kevent error when deleting timer\nerror: "<<strerror(errno)<<std::endl;
 }
 

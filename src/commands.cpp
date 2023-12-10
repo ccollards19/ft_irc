@@ -697,7 +697,7 @@ void	server::kick(Message &m, struct client *client)
 void	server::quit(Message &m, client *client)
 {
   std::vector<std::string> params = m.getContent();
-  std::string quit_message = ":" + client->_nickname + "!" + client->_username + "@" + client->_hostname + "QUIT";
+  std::string quit_message = ":" + client->_nickname + "!" + client->_username + "@" + client->_hostname + " QUIT";
   if (params.size() > 0)
     quit_message.append( " :"+ params[1]);
   close_connection(client);

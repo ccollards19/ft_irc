@@ -1,4 +1,5 @@
 #include "irc.hpp"
+#include <cstdlib>
 #include <vector>
 
 //free the ressources and exit
@@ -21,6 +22,7 @@ void server::safe_shutdown(int exit_code) {
 	}
   if (_res_start)
     freeaddrinfo(_res_start);
+  system("leaks ircserv");
 	exit(exit_code);
 }
 
@@ -52,40 +54,11 @@ void server::server_admin()
 	free(buffer);
 }
 
-void server::check_connection(struct client *c) 
-{
-	std::cout << "||||||||||CHECKCNCTN||||||||||" << std::endl;
-	std::cout<<"timer on fd : "<<c->_fd<<std::endl;//test
-	if (c->_ping) {
-    Message msg("", _cmds);
-    quit(msg, c);
-  }
-	else {
-	  c->_ping = 1;
-    send_reply( *this , *c, "PING :" + _servername);
-	  update_timer(c->_fd, CLIENT_TTL);
-	}
-}
-
-void server::close_connection(client *client)
-{
-	close(client->_fd);
-	_connections.erase(client->_fd);
-  std::vector<channel *>::iterator end = _chan_list.end();
-  for (std::vector<channel *>::iterator it = _chan_list.begin(); it != end; it++) {
-    (*it)->removeMember(client); 
-  }
-	_nick_map.erase(client->_nickname);
-	//TODO remove from channels and nick cleaning when implemented
-	delete client;
-}
-
 void server::regular_tasks() 
 {
 	//std::cout<<"regular tasks"<<std::endl;//test
 	//TODO add nick cleaning 
 }
-
 
 void server::receive_message()
 {
@@ -156,6 +129,38 @@ void server::add_connection()
 	read_set(newfd);
 	write_unset(newfd);
 	update_timer(newfd, CLIENT_TTL);
+}
+
+void server::check_connection(struct client *c) 
+{
+	std::cout << "||||||||||CHECKCNT||||||||||" << std::endl;
+	std::cout<<"timer on fd : "<<c->_fd<<std::endl;//test
+	if (c->_ping) {
+    Message msg("", _cmds);
+    quit(msg, c);
+  }
+	else {
+	  c->_ping = 1;
+    send_reply( *this , *c, "PING :" + _servername);
+	  update_timer(c->_fd, CLIENT_TTL);
+	}
+}
+
+void server::close_connection(client *client)
+{
+	std::cout << "||||||||||CLOSECNT||||||||||" << std::endl;
+	std::cout<<"close connection on fd : "<<client->_fd<<std::endl;//test
+	_connections.erase(client->_fd);
+  close(client->_fd);
+  if (client->_isRegistered) {
+    std::vector<channel *>::iterator end = _chan_list.end();
+    for (std::vector<channel *>::iterator it = _chan_list.begin(); it != end; it++) {
+      (*it)->removeMember(client); 
+    }
+    _nick_map.erase(client->_nickname);
+  }
+  delete_timer(client->_fd);
+	delete client;
 }
 
 // event loop using kevents
