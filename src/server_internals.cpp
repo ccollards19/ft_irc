@@ -155,7 +155,9 @@ void server::close_connection(client *client)
   if (client->_isRegistered) {
     std::vector<channel *>::iterator end = _chan_list.end();
     for (std::vector<channel *>::iterator it = _chan_list.begin(); it != end; it++) {
-      (*it)->removeMember(client); 
+      (*it)->removeMember(client);
+      if ((*it)->_members.empty())
+        removeChannel(*it);
     }
     _nick_map.erase(client->_nickname);
   }

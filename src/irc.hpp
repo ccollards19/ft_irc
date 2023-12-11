@@ -164,6 +164,7 @@ struct server
 	std::vector<struct channel*>::iterator getChannel(std::string channelName);
 	bool checkChannel(std::string channelName);
 	struct channel *createChannel(std::string channelName, struct client *client);
+  void removeChannel(struct channel *channel);
 	void joinMessage(channel *target, client *c);
 	void chanMessage(channel *target, client *c, std::string msg);
   //commands

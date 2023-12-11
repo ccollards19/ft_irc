@@ -68,6 +68,17 @@ void	channel::removeMember(struct client *client)
 		_members.erase(i);
 }
 
+void	server::removeChannel(struct channel *channel)
+{
+  for(std::vector<struct channel*>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it) {
+		if (*it == channel) {
+			_chan_list.erase(it);
+      delete channel;
+      return ;
+    }
+	}
+}
+
 void channel::addClient(client *client)
 {
 	_members.push_back(client);
