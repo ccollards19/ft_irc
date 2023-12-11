@@ -37,11 +37,9 @@ enum cmds
 	JOIN,
 	PING,
 	PONG,
-	BAN,
 	PASS,
 	USER,
 	PART,
-	KILL
 };
 
 class Message
@@ -78,7 +76,6 @@ struct channel
 	std::vector<struct client *> _members;
 	std::vector<struct client *> _operators;
 	std::vector<struct client *> _invite_list;
-	std::vector<struct client *> _ban_list;
 	std::string _mode;
 	std::string _name;
 	std::string _topic;
@@ -100,7 +97,6 @@ struct client
   socklen_t _socklen;
 	//user related
 	bool _isRegistered;
-	bool _is_oper;
 	std::string _nickname;
 	std::string _username;
 	std::string _hostname;
@@ -136,7 +132,6 @@ struct server
 	struct kevent		_changelist;
 	struct kevent		_eventlist;
 	struct timespec 	_timeout;
-	std::string _oper_pwd;
 	int 			_kq;
 	//member functions
 	void			init(char **argv);
@@ -173,8 +168,6 @@ struct server
 	void pass(Message &m, struct client *client);
 	void nick(Message &m, struct client *client);
 	void user(Message &m, struct client *client);
-	void oper(Message &m, struct client *client);
-	void kill(Message &m, struct client *client);
   	void kick(Message &m, struct client *client);
 	void mode(Message &m, struct client *client);
 	void join(Message &m, struct client *client);

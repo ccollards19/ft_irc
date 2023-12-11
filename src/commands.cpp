@@ -1,5 +1,4 @@
 #include "irc.hpp"
-#include <string>
 
 //                 PART
                  
@@ -177,40 +176,6 @@ void server::pong(Message &m, struct client *client)
     reply(m, *this, *client, ERR_NOSUCHSERVER);
   else
     client->_ping = 0;
-}
-
-//                  OPER
-
-void server::oper(Message &m, client *client)
-{
-	std::vector<std::string> params = m.getContent();
-	if (params.size() < 3)
-		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-	std::string password = params.at(2);
-	if (_oper_pwd != password)
-		reply(m, *this, *client, ERR_PASSWDMISMATCH);
-	else {
-		client->_is_oper = true;
-		reply(m, *this, *client, RPL_YOUREOPER);
-	}
-}
-
-//                  KILL
-
-void server::kill(Message &m, client *client) 
-{
-	std::vector<std::string> params = m.getContent();
-	int nosuchnick = 0;
-	if (!client->_is_oper)
-		reply(m, *this, *client, ERR_NOPRIVILEGES);
-	if (params.size() < 2)
-		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
-	try{_nick_map[params[1]];}
-	catch (std::exception &e){nosuchnick = 1;}
-	if (nosuchnick)
-		reply(m, *this, *client, ERR_NOSUCHNICK);
-	else
-		server::close_connection(_nick_map[params[1]]);
 }
 
 //                  MODE
