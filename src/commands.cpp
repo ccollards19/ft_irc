@@ -74,20 +74,6 @@ void server::invite(Message &m, struct client *client)
 	reply(m, *this, *target, RPL_INVITING);
 }
 
-
-void server::register_client(Message &m, struct client *client)
-{
-  std::cout<< client->_pass << ":" << client->_nickname << ':' <<client->_username <<"\n";
-  if (!client->_pass || client->_nickname.empty() || client->_username.empty())
-    return;
-	reply(m, *this, *client, RPL_WELCOME);
-	reply(m, *this, *client, RPL_YOURHOST);
-	reply(m, *this, *client, RPL_CREATED);
-	reply(m, *this, *client, RPL_MYINFO);
-	_nick_map[client->_nickname] = client;
-  client->_isRegistered = true;
-}
-
 //                 PASS
 
 void server::pass(Message &m, struct client *client)
@@ -167,8 +153,8 @@ void server::user(Message &m, client *client)
   register_client(m, client);
 }
 
-
 //                  PING
+
 void server::ping(Message &m, struct client *client)
 {
   std::vector<std::string> params = m.getContent();
@@ -180,7 +166,8 @@ void server::ping(Message &m, struct client *client)
     send_reply(*this, *client, ":"+ _servername +" PONG \n");
 }
 
-  //                 PONG 
+//                 PONG 
+                
 void server::pong(Message &m, struct client *client)
 {
     std::vector<std::string> params = m.getContent();
@@ -227,24 +214,6 @@ void server::kill(Message &m, client *client)
 }
 
 //                  MODE
-bool server::isAchannel(std::string name)
-{
-	std::vector<channel *>::iterator i = _chan_list.begin();
-	for ( ;  i != _chan_list.end() && (*i)->_name != name && i != _chan_list.end() ; ++i) {}
-	return (i != _chan_list.end());
-}
-
-bool client::isChanop(channel *c) {
-	std::vector<client *>::iterator i = c->_operators.begin();
-	for ( ;  (*i) != this && i != c->_operators.end() ; i++) {}
-	return (i != c->_operators.end());
-}
-
-bool client::isMember(channel *c){
-	std::vector<client *>::iterator i = c->_members.begin();
-	for ( ;  (*i) != this && i != c->_members.end() ; i++) {}
-	return (i != c->_members.end());
-}
 
 int server::ErrMode(Message &m, client *c, int part, channel *chan)
 {
@@ -284,6 +253,7 @@ int server::ErrMode(Message &m, client *c, int part, channel *chan)
 	}
 	return err;
 }
+
 void server::modeK(Message &m, client *client, channel *c)
 {
 	std::cout << "In mode K\n";
@@ -408,6 +378,7 @@ void server::modeT(Message &m, client *client, channel *c)
 			c->_mode.erase(c->_mode.find('t'));
 	}
 }
+
 std::string getModeMessage(std::string _servername, std::string _clientname, std::string _channelname, std::string _modename, int mode, std::vector<std::string> params)
 {
 	std::string res;
@@ -422,7 +393,9 @@ std::string getModeMessage(std::string _servername, std::string _clientname, std
 	}
 	return res;
 }
-void server::mode(Message &m, client *client){
+
+void server::mode(Message &m, client *client)
+{
 	std::vector<std::string> params = m.getContent();
 	std::string chanModes("itkol");
 	if (ErrMode(m, client, 1, NULL))
@@ -458,70 +431,6 @@ void server::mode(Message &m, client *client){
 }
 
 //                  Join
-
-void	channel::removeInvited(struct client *client) {
-	std::vector<struct client*>::iterator i;
-	if ((i = std::find(_invite_list.begin(), _invite_list.end(), client)) != _invite_list.end())
-		_invite_list.erase(i);
-}
-
-void	channel::removeMember(struct client *client) {
-	std::vector<struct client*>::iterator i;
-	if ((i = std::find(_members.begin(), _members.end(), client)) != _members.end())
-		_members.erase(i);
-}
-
-void channel::addClient(client *client) {
-	_members.push_back(client);
-}
-
-
-bool	channel::isModeSet(char mode) {
-	for (std::vector<char>::iterator it = this->_mode.begin(); it != this->_mode.end(); ++it) {
-		if (*it == mode)
-			return (true);
-	}
-	return (false);
-}
-
-std::vector<struct channel*>::iterator	server::getChannel(std::string channelName) {
-	for(std::vector<struct channel*>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it) {
-		if ((*it)->_name == channelName)	{
-			return (it);
-		}
-	}
-	return (_chan_list.end());
-}
-
-bool	server::checkChannel(std::string channelName){
-	std::vector<channel *>::iterator it;
-	for(it = server::_chan_list.begin(); it != server::_chan_list.end(); ++it) {
-		if ((*it)->_name == channelName) {
-			return (true);
-		}
-	}
-	return (false);
-}
-
-struct channel *server::createChannel(std::string channelName, struct client *client)
-{
-  if (checkChannel(channelName))
-    return (*getChannel(channelName));
-  channel *chan = new channel();
-  chan->_name = channelName;
-  chan->_operators.push_back(client);
-  chan->_creator = client;
-  chan->_prefix = '#';
-  chan->_chan_id = channelName;
-  chan->_capacity = 0;
-  _chan_list.push_back(chan);
-  return _chan_list.back();
-  // Message à print. Pas sur de ce que c'est
-}
-
-bool channel::isInvited(client *c) {
-	return (std::find(_invite_list.begin(), _invite_list.end(), c) != _invite_list.end());
-}
 
 void server::joinMessage(channel *target, client *c)
 {

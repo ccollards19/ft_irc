@@ -1,5 +1,7 @@
 #include "irc.hpp"
 
+// server utils
+
 void send_reply(struct server &s,struct client &c, std::string message)
 {
 	//std::cerr << "RENTRE RPL\n";
@@ -11,6 +13,109 @@ void send_error(struct server &s,struct client &c, std::string message)
 {
 	c._send_buffer.append(message);
 	s.write_set(c._fd);
+}
+
+void server::register_client(Message &m, struct client *client)
+{
+  std::cout<< client->_pass << ":" << client->_nickname << ':' <<client->_username <<"\n";
+  if (!client->_pass || client->_nickname.empty() || client->_username.empty())
+    return;
+	reply(m, *this, *client, RPL_WELCOME);
+	reply(m, *this, *client, RPL_YOURHOST);
+	reply(m, *this, *client, RPL_CREATED);
+	reply(m, *this, *client, RPL_MYINFO);
+	_nick_map[client->_nickname] = client;
+  client->_isRegistered = true;
+}
+
+struct channel *server::createChannel(std::string channelName, struct client *client)
+{
+  if (checkChannel(channelName))
+    return (*getChannel(channelName));
+  channel *chan = new channel();
+  chan->_name = channelName;
+  chan->_operators.push_back(client);
+  chan->_creator = client;
+  chan->_prefix = '#';
+  chan->_chan_id = channelName;
+  chan->_capacity = 0;
+  _chan_list.push_back(chan);
+  return _chan_list.back();
+  // Message à print. Pas sur de ce que c'est
+}
+
+std::vector<struct channel*>::iterator	server::getChannel(std::string channelName) 
+{
+	for(std::vector<struct channel*>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it) {
+		if ((*it)->_name == channelName)	{
+			return (it);
+		}
+	}
+	return (_chan_list.end());
+}
+
+void	channel::removeInvited(struct client *client)
+{
+	std::vector<struct client*>::iterator i;
+	if ((i = std::find(_invite_list.begin(), _invite_list.end(), client)) != _invite_list.end())
+		_invite_list.erase(i);
+}
+
+void	channel::removeMember(struct client *client) 
+{
+	std::vector<struct client*>::iterator i;
+	if ((i = std::find(_members.begin(), _members.end(), client)) != _members.end())
+		_members.erase(i);
+}
+
+void channel::addClient(client *client)
+{
+	_members.push_back(client);
+}
+
+// bools function
+
+bool server::isAchannel(std::string name)
+{
+	std::vector<channel *>::iterator i = _chan_list.begin();
+	for ( ;  i != _chan_list.end() && (*i)->_name != name && i != _chan_list.end() ; ++i) {}
+	return (i != _chan_list.end());
+}
+
+bool client::isChanop(channel *c) {
+	std::vector<client *>::iterator i = c->_operators.begin();
+	for ( ;  (*i) != this && i != c->_operators.end() ; i++) {}
+	return (i != c->_operators.end());
+}
+
+bool client::isMember(channel *c){
+	std::vector<client *>::iterator i = c->_members.begin();
+	for ( ;  (*i) != this && i != c->_members.end() ; i++) {}
+	return (i != c->_members.end());
+}
+
+bool	channel::isModeSet(char mode)
+{
+	for (std::vector<char>::iterator it = this->_mode.begin(); it != this->_mode.end(); ++it) {
+		if (*it == mode)
+			return (true);
+	}
+	return (false);
+}
+
+bool channel::isInvited(client *c)
+{
+	return (std::find(_invite_list.begin(), _invite_list.end(), c) != _invite_list.end());
+}
+
+bool	server::checkChannel(std::string channelName){
+	std::vector<channel *>::iterator it;
+	for(it = server::_chan_list.begin(); it != server::_chan_list.end(); ++it) {
+		if ((*it)->_name == channelName) {
+			return (true);
+		}
+	}
+	return (false);
 }
 
 struct channel *get_channel(struct server s, std::string name)
@@ -25,6 +130,7 @@ struct channel *get_channel(struct server s, std::string name)
 	}
 	return NULL;
 }
+
 std::string get_mask_list(struct server s, std::string name, char flag)
 {
 	if (flag != 'b' && flag != 'i')
@@ -39,6 +145,7 @@ std::string get_mask_list(struct server s, std::string name, char flag)
 	}
 	return res;
 }
+
 client *get_operator(struct server s, std::string name)
 {
 	channel *target = get_channel(s, name);
@@ -46,6 +153,7 @@ client *get_operator(struct server s, std::string name)
 	target->_operators.size() == 1 ? uniqop = target->_operators[0] : uniqop = NULL;
 	return uniqop;
 }
+
 std::string to_string(int error)
 {
 	std::string res = std::to_string(error);
