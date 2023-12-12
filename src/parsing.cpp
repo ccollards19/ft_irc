@@ -14,6 +14,7 @@ std::string Message::getCommandName() {
 		case USER:return "USER";
 		case PART:return "PART";
 		case PASS:return "PASS";
+		case QUIT:return "QUIT";
 		default: return "";
 	}
 }
@@ -72,6 +73,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		case PASS: _command = PASS; break;
 		case USER : _command = USER;break;
 		case PART : _command = PART;break;
+		case QUIT : _command = QUIT;break;
 		default: _command = NONE;
 	}
 	if (_command)
@@ -130,6 +132,7 @@ void parse(struct server *s, struct client *c) {
 				case PASS: s->pass(msg, c);break;
 				case USER:s->user(msg, c);break;
 				case PART:s->part(msg, c);break;
+				case QUIT:s->quit(msg, c);break;
 				default:break;
 			}
 		}

@@ -12,10 +12,10 @@ static void init_cmds_map(std::map<std::string, int> &_cmds)
 	_cmds["JOIN"] = JOIN;
 	_cmds["PING"] = PING;
 	_cmds["PONG"] = PONG;
-	//_cmds["BAN"] = BAN;
 	_cmds["PASS"] = PASS;
 	_cmds["USER"] = USER;
 	_cmds["PART"] = PART;
+	_cmds["QUIT"] = QUIT;
   
 } 
 
