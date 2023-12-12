@@ -32,10 +32,7 @@ void server::part(Message &m, struct client *client)
 			send_reply(*this, **it, ":" + client->_nickname + "!" + client->_username + "@" + _servername + " PART " + chan->_name + " :" + part_msg);
 		}
 	}
-	chan->_members.erase(std::find(chan->_members.begin(), chan->_members.end(), client));
-	chan->_operators.erase(std::find(chan->_operators.begin(), chan->_operators.end(), client));
-	if (chan->_operators.size() == 0)
-		chan->_operators.push_back(chan->_members.front());
+  chan->removeMember(client);
 }
 
 //                 INVITE
@@ -450,16 +447,10 @@ void server::join(Message &m, client *client){
 		reply(m, *this, *client, RPL_ENDOFNAMES);
 	}
 	else if (params[0][0] == '0')//leave all channels
-	{
-		for(std::vector<channel *>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it)
-		{
-			if (client->isMember(*it)){
-				(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), client));
-				(*it)->_operators.erase(std::find((*it)->_operators.begin(), (*it)->_members.end(), client));
-			}
-			if ((*it)->_operators.size() == 0)
-				(*it)->_operators.push_back((*it)->_members.front());
-		}
+  {
+		for(std::vector<channel *>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it) {
+      (*it)->removeMember(client);
+    }
 	}
 
 }
