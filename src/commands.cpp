@@ -33,6 +33,8 @@ void server::part(Message &m, struct client *client)
 		}
 	}
 	chan->_members.erase(std::find(chan->_members.begin(), chan->_members.end(), client));
+	if (chan->_operators.size() == 0)
+		chan->_operators.push_back(chan->_members.front());
 }
 
 //                 INVITE
@@ -452,6 +454,8 @@ void server::join(Message &m, client *client){
 		{
 			if (client->isMember(*it))
 				(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), client));
+			if ((*it)->_operators.size() == 0)
+				(*it)->_operators.push_back((*it)->_members.front());
 		}
 	}
 

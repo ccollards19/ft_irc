@@ -144,13 +144,15 @@ struct channel *get_channel(struct server s, std::string name)
 
 std::string get_mask_list(struct server s, std::string name, char flag)
 {
+	(void) s; //Attention
+	(void)	name; //Attention
 	if (flag != 'b' && flag != 'i')
 		return "";
 	std::string res;
-	channel *chan = get_channel(s, name);
+	//channel *chan = get_channel(s, name);
 	std::vector<client *> target;
 	std::vector<client *>::iterator i;
-	(flag == 'b' ? target = chan->_ban_list : target = chan->_invite_list);
+	//(flag == 'b' ? target = chan->_ban_list : target = chan->_invite_list);
 	for (std::vector<client *>::iterator i = target.begin(); i != target.end() ; ++i) {
 		res += (*i)->_nickname + " ";
 	}
