@@ -66,6 +66,14 @@ void	channel::removeMember(struct client *client)
 	std::vector<struct client*>::iterator i;
 	if ((i = std::find(_members.begin(), _members.end(), client)) != _members.end())
 		_members.erase(i);
+	if ((i = std::find(_operators.begin(), _operators.end(), client)) != _operators.end()) {
+	  _operators.erase(i);
+    if (_operators.empty() && !_members.empty()) {
+      _operators.push_back(_members.front());
+      //TODO send Mode message
+    }
+  }
+
 }
 
 void	server::removeChannel(struct channel *channel)
