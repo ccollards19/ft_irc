@@ -72,6 +72,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		case PASS: _command = PASS; break;
 		case USER : _command = USER;break;
 		case PART : _command = PART;break;
+		case BAN : _command = BAN;break;
 		default: _command = NONE;
 	}
 	if (_command)
@@ -100,6 +101,7 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 
 void parse(struct server *s, struct client *c) {
 	unsigned long pos;
+	unsigned long pos2;
 	while ((pos = c->_receive_buffer.find('\n')) != std::string::npos) {
 		// std::cout << "PARSING: " + c->_receive_buffer << "\n";
 		Message msg((c->_receive_buffer).substr(0, pos + 1), s->_cmds);
@@ -123,7 +125,35 @@ void parse(struct server *s, struct client *c) {
 				case MODE:s->mode(msg, c);break;
 				case INVITE: s->invite(msg, c);break;
 				case PRIVMSG: s->privmsg(msg, c);break;
-				case JOIN:s->join(msg, c);break;
+				case JOIN:
+					msg.showContent();
+					if (msg.getContent().size() >= 1 && msg.getContent()[0].find(',') != std::string::npos)
+					{
+						std::string chans = msg.getContent()[0] + ",";
+						std::string passwords;
+						if (msg.getContent().size() > 1)
+							passwords = msg.getContent()[2] + ",";
+						else
+							passwords = "";
+						while ((pos = chans.find(',')) != std::string::npos) {
+							std::string message("JOIN :" + chans.substr(0, pos));
+							if (!passwords.empty()){
+								pos2 = passwords.find(',');
+								message += " " + passwords.substr(0, pos2);
+								passwords.erase(0, pos + 1);
+							}
+							std::cout << message + "\0" << "\n";
+							Message mjoin(message + "\0", s->_cmds);
+							s->join(mjoin, c);
+							chans.erase(0, (pos + 1));
+						}
+					}
+					else{
+						s->join(msg, c);
+
+					}
+
+					break;
 				case PING:s->ping(msg, c);break;
 				case PONG:s->pong(msg, c);break;
 				case NICK:s->nick(msg, c);break;

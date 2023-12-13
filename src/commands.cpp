@@ -19,20 +19,19 @@ void server::part(Message &m, struct client *client)
 		reply(m, *this, *client, ERR_NOTONCHANNEL);
 		return ;
 	}
-	if (params.size() == 1)	{
-		for (std::vector<struct client *>::iterator it = chan->_members.begin(); it != chan->_members.end() ; ++it) {
-			std::cout << "sending message to " << (*it)->_nickname << std::endl;
-			send_reply(*this, **it, ":" + client->_nickname + "!" + client->_username + "@" + _servername + " PART " + chan->_name);
-		}
-	}
-	else {
-		std::string part_msg = params[1];
-		for (std::vector<struct client *>::iterator it = chan->_members.begin(); it != chan->_members.end() ; ++it) {
-			std::cout << "sending message to " << (*it)->_nickname << std::endl;
-			send_reply(*this, **it, ":" + client->_nickname + "!" + client->_username + "@" + _servername + " PART " + chan->_name + " :" + part_msg);
-		}
+	std::string part_msg;
+	if (params.size() > 2)
+		part_msg = " :" + params[1];
+	else
+		part_msg = "";
+	for (std::vector<struct client *>::iterator it = chan->_members.begin(); it != chan->_members.end() ; ++it) {
+		send_reply(*this, **it, ":" + client->_nickname + "!" + client->_username + "@" + _servername + " PART " + chan->_name + part_msg);
 	}
 	chan->_members.erase(std::find(chan->_members.begin(), chan->_members.end(), client));
+	if (chan->_members.empty())
+	{
+		reply(m, *this, *client, RPL_ENDOFNAMES);
+	}
 }
 
 //                 INVITE
@@ -210,7 +209,7 @@ int server::ErrMode(Message &m, client *c, int part, channel *chan)
 			reply(m, *this, *c, ERR_USERNOTINCHANNEL);
 			err = 1;
 		}
-		else if (m.getContent()[1].size() > 2)
+		else if (m.getContent()[1].size() != 2)
 		{
 			reply(m, *this, *c, ERR_UNKNOWNMODE);
 			err = 1;
@@ -287,11 +286,16 @@ void server::modeI(Message &m, client *client, channel *c)
 		if (mode[0] == '+') {
 			if (c->_mode.find('i') == std::string::npos)
 				c->_mode += 'i';
-
-			if ( params.size() > 3 && _nick_map.find(params[2]) != _nick_map.end() && \
+			int cpt = 0;
+			if ( params.size() >= 3 && ++cpt && _nick_map.find(params[2]) != _nick_map.end() && ++cpt && \
 			std::find(c->_invite_list.begin(), c->_invite_list.end(), \
-			_nick_map[params[2]]) == c->_invite_list.end())
+			_nick_map[params[2]]) == c->_invite_list.end() && ++cpt)
+			{
 				c->_invite_list.push_back(_nick_map[params[2]]);
+			}
+			std::cout << cpt << "\n";
+
+
 		}
 		if (mode[0] == '-' && c->_mode.find('i') != std::string::npos)
 			c->_mode.erase(c->_mode.find('i'));
@@ -350,11 +354,13 @@ std::string getModeMessage(std::string _servername, std::string _clientname, std
 
 	res = ":" + _servername + " :" + _clientname + " MODE " + _channelname + " " + _modename;
 	switch (mode) {
-		case 'i': params.size() > 3 ? res += params[2] : res += "";break;
-		case 't':res += params[2];break;
-		case 'k':res += params[2];break;
-		case 'o':res += params[2];break;
-		case 'l':res += params[2];break;
+		case 'i': params.size() >= 3 ? res += " " + params[2] : res += "";break;
+		case 't':params.size() >= 3 ? res += " " + params[2] : res += "";break;
+		case 'k':params.size() >= 3 ? res += " " + params[2] : res += "";break;
+		case 'o':res += " " + params[2];break;
+		case 'l':params.size() >= 3 ? res += " " + params[2] : res += "";break;
+		default:
+			break;
 	}
 	return res;
 }
@@ -363,6 +369,10 @@ void server::mode(Message &m, client *client)
 {
 	std::vector<std::string> params = m.getContent();
 	std::string chanModes("itkol");
+	if (params.size() == 1){
+		reply(m, *this, *client, RPL_CHANNELMODEIS);
+		return ;
+	}
 	if (ErrMode(m, client, 1, NULL))
 		return ;
 	channel *c;
@@ -406,47 +416,52 @@ void server::joinMessage(channel *target, client *c)
 }
 
 void server::join(Message &m, client *client){
+
 	std::vector<std::string> params = m.getContent();
-	if (params.size() < 1)
-	{
+	if (params.size() < 1){
 		reply(m, *this, *client, ERR_NEEDMOREPARAMS);
 		return ;
 	}
 	std::string channelName = params[0];
+	bool newchan = !checkChannel(channelName);
 	struct channel *current;
 	if (params[0][0] == '#'){
-		current = createChannel(channelName, client);
-		if (current->_capacity && current->isModeSet('l') && current->_capacity >= current->_members.size())
+		if (newchan)
+			current = createChannel(channelName, client);
+		else
+			current = *getChannel(channelName);
+		if (current->_capacity && current->isModeSet('l') && current->_capacity <= current->_members.size())
 		{
+			std::cout << current->_capacity << " >= " << current->_members.size() << std::endl;
 			reply(m, *this, *client, ERR_CHANNELISFULL);
 			return ;
 		}
-		if (current->isModeSet('k'))
-		{
-
-		}
-		if (!current->isModeSet('i'))
-		{
-			if (std::find(current->_members.begin(), current->_members.end(), client) == current->_members.end())
-			{
-				joinMessage(current, client);
-				current->_members.push_back(client);
+		if (current->isModeSet('k')){
+			std::string pwd;
+			if (params.size() > 1)
+				pwd = params[1];
+			else
+				pwd = "";
+			if (current->_pwd != pwd) {
+				reply(m, *this, *client, ERR_PASSWDMISMATCH);
+				return;
 			}
-			topic(m, client);
 		}
-		else if (current->isInvited(client))
-		{
-			current->_members.push_back(client);
-			topic(m, client);
-			current->removeInvited(client);
-		}
-		else
+		if (current->isModeSet('i') && !current->isInvited(client)){
 			reply(m, *this, *client, ERR_INVITEONLYCHAN);
+			return;
+		}
+		if (std::find(current->_members.begin(), current->_members.end(), client) == current->_members.end())
+			current->_members.push_back(client);
+		joinMessage(current, client);
+		topic(m, client);
 		send_reply(*this, *client, ":" + client->_nickname + " JOIN " + current->_name);
 		reply(m, *this, *client, RPL_NAMREPLY);
 		reply(m, *this, *client, RPL_ENDOFNAMES);
+		if (newchan)
+			send_reply(*this, *client, ":" + _servername + " MODE " + channelName + " +o " + client->_nickname);
 	}
-	else if (params[0][0] == '0')//leave all channels
+	else if (params[0] == "0")//leave all channels
 	{
 		for(std::vector<channel *>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it)
 		{

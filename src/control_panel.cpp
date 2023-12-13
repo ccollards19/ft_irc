@@ -30,8 +30,6 @@ void server::register_client(Message &m, struct client *client)
 
 struct channel *server::createChannel(std::string channelName, struct client *client)
 {
-  if (checkChannel(channelName))
-    return (*getChannel(channelName));
   channel *chan = new channel();
   chan->_name = channelName;
   chan->_operators.push_back(client);
@@ -179,7 +177,7 @@ std::string getNameList(Message m, server &s)
 	channel *chan = get_channel(s, m.getContent()[0]);
 	std::vector<client *>::iterator it = chan->_members.begin();
 	for (; it != chan->_members.end() ; ++it) {
-		res += (*it)->_nickname;
+		res += (*it)->isChanop(chan) ? "@" + (*it)->_nickname : (*it)->_nickname;
 		res += " ";
 	}
 	return res;
@@ -205,11 +203,11 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 		case ERR_NOSUCHNICK : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[nick] + " :No such nick/channel\n");break;
 		case ERR_NOSUCHSERVER : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[server] + " :No such server\n");break;
 		case ERR_NOSUCHCHANNEL : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[chan] + " :No such channel\n");break;
-		case ERR_CANNOTSENDTOCHAN  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[chan] + " :Cannot send to channel\n ");break;
+		case ERR_CANNOTSENDTOCHAN  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[chan] + " :Cannot send to channel\n");break;
 		case ERR_TOOMANYCHANNELS  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[chan] + " :You have joined too many channels\n");break;
 		case ERR_WASNOSUCHNICK  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[nick] + " :There was no such nickname\n");break;
 		case ERR_TOOMANYTARGETS  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[other] + " :Duplicate recipients. No message delivered\n");break;
-		case ERR_NOORIGIN  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  ":No origin specified ");break;
+		case ERR_NOORIGIN  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  ":No origin specified\n");break;
 		case ERR_NORECIPIENT  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  ":No recipient given " + m.getCommandName() + "\n");break;
 		case ERR_NOTEXTTOSEND  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  ":No text to send\n");break;
 		case ERR_NOTOPLEVEL  : send_error(s, c,":" + s._servername +" " + to_string(error) + " " + c._nickname + " " +  m.getContent()[other] + " :No top level domain specified\n");break;
@@ -256,7 +254,7 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 			//case RPL_EXCEPTLIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + get_channel_list(s, m.getContent()[chan], 'l'));break; //TODO exception list
 		case RPL_INVITELIST : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + get_mask_list(s,m.getContent()[chan], 'i'));break;
 		case RPL_UNIQOPIS : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " " + get_operator(s, m.getContent()[chan])->_nickname);break;
-		case RPL_CHANNELMODEIS  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " " + m.getContent()[1] + " " + m.getContent()[2]);break;
+		case RPL_CHANNELMODEIS  :send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " " + get_channel(s, m.getContent()[chan])->_mode);break;
 		case RPL_NOTOPIC  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :No topic is set");break;
 		case RPL_TOPIC  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] + " :" + get_channel(s, m.getContent()[chan])->_topic);break;
 		case RPL_INVITING  : send_reply(s, c, ":" + s._servername +" " + to_string(error) + + " " +c._nickname + " " + m.getContent()[chan] +" " + m.getContent()[nick]);break;

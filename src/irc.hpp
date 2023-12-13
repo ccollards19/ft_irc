@@ -40,6 +40,7 @@ enum cmds
 	PASS,
 	USER,
 	PART,
+	BAN
 };
 
 class Message
@@ -76,6 +77,7 @@ struct channel
 	std::vector<struct client *> _members;
 	std::vector<struct client *> _operators;
 	std::vector<struct client *> _invite_list;
+	std::vector<struct client *> _ban_list;
 	std::string _mode;
 	std::string _name;
 	std::string _topic;
