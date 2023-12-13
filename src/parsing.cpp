@@ -33,15 +33,12 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 	size_t pos;
 
 	pos = msg.find(" ");
-	//std::cout << "DEBUG "<< msg << "\n";
 	while (msg.find("\n") != std::string::npos)
 		msg.erase(msg.find("\n"));
 	while (msg.find("\r") != std::string::npos)
 		msg.erase(msg.find("\r"));
-	//std::cout <<"DEBUG2 "<< msg << "\n";
 	if (msg.find(" ") == std::string::npos) {pos = msg.size();}
 	std::string fword = msg.substr(0, pos);
-	//check if it is a prefix and setup the next word as the first word
 	if (fword.size() && toascii(fword.at(0)) == ':')
 	{
 		try
@@ -55,11 +52,9 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 		pos = msg.find(" ");
 		fword = msg.substr(0, pos);
 	}
-	//check if it is a valid command and erase the first word if it is. setup the command enum
 	int cmd;
 	try{cmd = commands.at(fword);}
 	catch (std::exception &e) {cmd = 0;}
-	std::cout << cmd << std::endl;
 	switch (cmd) {
 		case KICK: _command = KICK; break;
 		case INVITE : _command = INVITE; break;
@@ -79,7 +74,6 @@ Message::Message(std::string msg, std::map<std::string, int> commands) {
 	}
 	if (_command)
 		msg.erase(0, pos + 1);
-	//loop through the content of the message. if a word start with ':' it is considered as one argument
 	while (pos)
 	{
 		if (msg.size() && toascii(msg.at(0)) == ':')
@@ -105,13 +99,8 @@ void parse(struct server *s, struct client *c) {
 	unsigned long pos;
 	unsigned long pos2;
 	while ((pos = c->_receive_buffer.find('\n')) != std::string::npos) {
-		// std::cout << "PARSING: " + c->_receive_buffer << "\n";
 		Message msg((c->_receive_buffer).substr(0, pos + 1), s->_cmds);
-		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
 		c->_receive_buffer.erase(0, (pos + 1));
-		// std::cout << "ERASE: ["  << c->_receive_buffer << "]\n";
-		// std::cout << "command : [" << msg.getCommand() << "] "<< msg.getCommandName() << "\n";
-		// msg.showContent();
 		if (!c->_isRegistered) {
 			switch (msg.getCommand()) {
 				case NICK:s->nick(msg, c);break;
@@ -128,7 +117,6 @@ void parse(struct server *s, struct client *c) {
 				case INVITE: s->invite(msg, c);break;
 				case PRIVMSG: s->privmsg(msg, c);break;
 				case JOIN:
-					msg.showContent();
 					if (msg.getContent().size() >= 1 && msg.getContent()[0].find(',') != std::string::npos)
 					{
 						std::string chans = msg.getContent()[0] + ",";
@@ -144,7 +132,6 @@ void parse(struct server *s, struct client *c) {
 								message += " " + passwords.substr(0, pos2);
 								passwords.erase(0, pos + 1);
 							}
-							std::cout << message + "\0" << "\n";
 							Message mjoin(message + "\0", s->_cmds);
 							s->join(mjoin, c);
 							chans.erase(0, (pos + 1));
@@ -168,64 +155,3 @@ void parse(struct server *s, struct client *c) {
 		}
 	}
 }
-
-
-//
-//void display(std::vector<std::string> s)
-//{
-//	std::cout << "[";
-//	std::vector<std::string>::iterator i = s.begin();
-//	while (i != s.end())
-//	{
-//		std::cout << "|" + *i++ + "|" << " + ";
-//	}
-//	std::cout << "]\n";
-//}
-//
-//void display_command(int cmd)
-//{
-//	std::cout << "command: ";
-//	switch (cmd) {
-//		case NONE:std::cout << "NONE\n";break;
-//		case KICK:std::cout << "KICK\n";break;
-//		case TOPIC:std::cout << "TOPIC\n";break;
-//		case MODE:std::cout << "MODE\n";break;
-//		case INVITE:std::cout << "INVITE\n";break;
-//		case PRIVMSG:std::cout << "PRIVMSG\n";break;
-//		case JOIN:std::cout << "JOIN\n";break;
-//		case PING:std::cout << "PING\n";break;
-//	}
-//}
-//
-//int main()
-//{
-//	std::map<std::string, int> cmds;
-//	cmds["KICK"] = KICK;
-//	cmds["TOPIC"] = TOPIC;
-//	cmds["MODE"] = MODE;
-//	cmds["INVITE"] = INVITE;
-//	cmds["NICK"] = NICK;
-//	cmds["PRIVMSG"] = PRIVMSG;
-//	cmds["JOIN"] = JOIN;
-//	cmds["PING"] = PING;
-//
-//	std::string s1("KICK nico pretty please");
-//	std::string s2(":nico!nicolas@user KICK Merlin");
-//	std::string s3("PRIVMSG Cyrdu98 :salut ca va ?");
-//	std::string s4("kickmoistp");
-//
-//	Message test(s1, cmds);
-//	Message test2(s2, cmds);
-//	Message test3(s3, cmds);
-//	Message test4(s4, cmds);
-//
-//	std::cout << "cleared messages: ["<< s1 << ","<<  s2<< "," << s3<< "," << s4 << "]\n";
-//	display_command(test.getCommand());
-//	display(test.getContent());
-//	display_command(test2.getCommand());
-//	display(test2.getContent());
-//	display_command(test3.getCommand());
-//	display(test3.getContent());
-//	display_command(test4.getCommand());
-//	display(test4.getContent());
-//}

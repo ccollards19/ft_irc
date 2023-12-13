@@ -77,13 +77,11 @@ void server::invite(Message &m, struct client *client)
 void server::pass(Message &m, struct client *client)
 {
   std::vector<std::string> params = m.getContent();
-  std::cout<<params[0] + "=" + _password <<"\n";
   if (params.size() < 1)
     reply(m, *this, *client, ERR_NEEDMOREPARAMS);
   else if (client->_isRegistered)
     reply(m, *this, *client, ERR_ALREADYREGISTRED);
   else {
-    std::cout<<params[0] + "=" + _password <<"\n";
     if (params[0].compare(_password) == 0)
       client->_pass = true;
     else
@@ -283,8 +281,6 @@ int server::modeO(Message &m, client *client, channel *c)
 
 int server::modeI(Message &m, client *client, channel *c)
 {
-	std::cout << "In mode I\n";
-
 	std::vector<std::string> params = m.getContent();
 	std::string mode = params[1];
 	if (!client->isChanop(c))
@@ -297,16 +293,10 @@ int server::modeI(Message &m, client *client, channel *c)
 		if (mode[0] == '+') {
 			if (c->_mode.find('i') == std::string::npos)
 				c->_mode += 'i';
-			int cpt = 0;
-			if ( params.size() >= 3 && ++cpt && _nick_map.find(params[2]) != _nick_map.end() && ++cpt && \
+			if ( params.size() >= 3  && _nick_map.find(params[2]) != _nick_map.end() && \
 			std::find(c->_invite_list.begin(), c->_invite_list.end(), \
-			_nick_map[params[2]]) == c->_invite_list.end() && ++cpt)
-			{
+			_nick_map[params[2]]) == c->_invite_list.end())
 				c->_invite_list.push_back(_nick_map[params[2]]);
-			}
-			std::cout << cpt << "\n";
-
-
 		}
 		if (mode[0] == '-' && c->_mode.find('i') != std::string::npos)
 			c->_mode.erase(c->_mode.find('i'));
@@ -319,8 +309,6 @@ int server::modeI(Message &m, client *client, channel *c)
 
 int server::modeL(Message &m, client *client, channel *c)
 {
-	std::cout << "In mode L\n";
-
 	std::vector<std::string> params = m.getContent();
 	std::string mode = params[1];
 	int size = stoi(params[2]);
@@ -348,7 +336,6 @@ int server::modeL(Message &m, client *client, channel *c)
 
 int server::modeT(Message &m, client *client, channel *c)
 {
-	std::cout << "In mode T\n";
 	std::vector<std::string> params = m.getContent();
 	std::string mode = params[1];
 	if (!client->isChanop(c))
@@ -400,8 +387,6 @@ void server::mode(Message &m, client *client)
 		return;
 	int issue = 0;
 	std::string mode(params[1]);
-	std::cout << mode <<  "\n";
-	std::cout << chanModes.find(mode[1]) <<  "\n";
 	std::string msg;
 	if (chanModes.find(mode[1]) != std::string::npos && (mode[0] == '-' || mode[0] == '+')) {
 		if (mode[1] == 'i')

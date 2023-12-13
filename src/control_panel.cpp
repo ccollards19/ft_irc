@@ -16,9 +16,10 @@ void send_error(struct server &s,struct client &c, std::string message)
 
 void server::register_client(Message &m, struct client *client)
 {
-  std::cout<< client->_pass << ":" << client->_nickname << ':' <<client->_username <<"\n";
-  if (!client->_pass || client->_nickname.empty() || client->_username.empty())
-    return;
+	if (DEBUG)
+		std::cout<< client->_pass << ":" << client->_nickname << ':' <<client->_username <<"\n";
+	if (!client->_pass || client->_nickname.empty() || client->_username.empty())
+		return;
 	reply(m, *this, *client, RPL_WELCOME);
 	reply(m, *this, *client, RPL_YOURHOST);
 	reply(m, *this, *client, RPL_CREATED);
