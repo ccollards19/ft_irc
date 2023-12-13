@@ -29,8 +29,11 @@ void server::safe_shutdown(int exit_code) {
 // read the standard output and process commands only quits
 void server::server_admin() 
 {
-	std::cout << "||||||||||SERVADMN||||||||||" << std::endl;
-	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
+	if (DEBUG)
+	{
+		std::cout << "||||||||||SERVADMN||||||||||" << std::endl;
+		std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
+	}
 	if ((size_t) _eventlist.data == 0)
 		safe_shutdown(EXIT_SUCCESS);
 	char *buffer = (char *) malloc(
@@ -62,8 +65,7 @@ void server::regular_tasks()
 
 void server::receive_message()
 {
-	std::cout << "||||||||||RECVDATA||||||||||" << std::endl;
-	std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
+
 	if ((size_t) _eventlist.data == 0) {
 		if ((_eventlist.flags & EV_EOF) == EV_EOF)
 			close_connection(_connections[(size_t) _eventlist.ident]);
@@ -80,10 +82,14 @@ void server::receive_message()
 		free(buffer);
 		return;
 	}
-  client *client = _connections[_eventlist.ident];
-  update_timer(client->_fd, CLIENT_TTL);
+	client *client = _connections[_eventlist.ident];
+	update_timer(client->_fd, CLIENT_TTL);
 	client->_receive_buffer.append(buffer, _eventlist.data);
-	std::cout << "[" << client->_receive_buffer << "]"<< std::endl;//test
+	if (DEBUG){
+		std::cout << "||||||||||RECVDATA||||||||||" << std::endl;
+		std::cout << (size_t) _eventlist.data << " bytes received on fd : ["<< _eventlist.ident << "]\n";//test
+		std::cout << "[" << client->_receive_buffer << "]"<< std::endl;
+	}//test
 	free(buffer);
 	parse(this, client);
 }
@@ -91,9 +97,12 @@ void server::receive_message()
 void server::send_message() 
 {
 	client *tmp = _connections[_eventlist.ident];
-	std::cout << "||||||||||SENDDATA||||||||||" << std::endl;
-	std::cout << "sent message on fd : " << tmp->_fd << std::endl;//test
-	std::cout << "[" << tmp->_send_buffer << "]" << std::endl;//test
+	if (DEBUG)
+	{
+		std::cout << "||||||||||SENDDATA||||||||||" << std::endl;
+		std::cout << "sent message on fd : " << tmp->_fd << std::endl;//test
+		std::cout << "[" << tmp->_send_buffer << "]" << std::endl;//test
+	}
 	int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(),
 					 tmp->_send_buffer.size(), 0);
 	if (nbyte <
@@ -108,17 +117,17 @@ void server::send_message()
 // add a client (not a user yet)
 void server::add_connection() 
 {
-	std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
-  client *new_client = new(std::nothrow) client();
+	if (DEBUG)
+		std::cout << "||||||||||NEWCNCTN||||||||||" << std::endl;
+	client *new_client = new(std::nothrow) client();
 	if (new_client == NULL) {
 		std::cerr << "memory error when adding new connection " << std::endl;
 		safe_shutdown(EXIT_FAILURE);
 	}
 	int newfd = accept(_socketfd, &(new_client->_sockaddr), &(new_client->_socklen));
 	if (newfd == -1) {
-		std::cerr << "socket error when adding new connection " << std::endl
-				  << "error: " << strerror(errno) << std::endl;
-    delete new_client;
+		std::cerr << "socket error when adding new connection " << std::endl << "error: " << strerror(errno) << std::endl;
+		delete new_client;
 		safe_shutdown(EXIT_FAILURE);
 	}
 	_connections[newfd] = new_client;
@@ -133,35 +142,41 @@ void server::add_connection()
 
 void server::check_connection(struct client *c) 
 {
-	std::cout << "||||||||||CHECKCNT||||||||||" << std::endl;
-	std::cout<<"timer on fd : "<<c->_fd<<std::endl;//test
+	if (DEBUG)
+	{
+		std::cout << "||||||||||CHECKCNT||||||||||" << std::endl;
+		std::cout<<"timer on fd : "<<c->_fd<<std::endl;//test
+	}
 	if (c->_ping) {
-    Message msg("", _cmds);
-    quit(msg, c);
-  }
+		Message msg("", _cmds);
+		quit(msg, c);
+	}
 	else {
-	  c->_ping = 1;
-    send_reply( *this , *c, "PING :" + _servername);
-	  update_timer(c->_fd, CLIENT_TTL);
+		c->_ping = 1;
+		send_reply( *this , *c, "PING :" + _servername);
+		update_timer(c->_fd, CLIENT_TTL);
 	}
 }
 
 void server::close_connection(client *client)
 {
-	std::cout << "||||||||||CLOSECNT||||||||||" << std::endl;
-	std::cout<<"close connection on fd : "<<client->_fd<<std::endl;//test
+	if (DEBUG)
+	{
+		std::cout << "||||||||||CLOSECNT||||||||||" << std::endl;
+		std::cout<<"close connection on fd : "<<client->_fd<<std::endl;//test
+	}
 	_connections.erase(client->_fd);
-  close(client->_fd);
-  if (client->_isRegistered) {
-    std::vector<channel *>::iterator end = _chan_list.end();
-    for (std::vector<channel *>::iterator it = _chan_list.begin(); it != end; it++) {
-      (*it)->removeMember(client);
-      if ((*it)->_members.empty())
-        removeChannel(*it);
-    }
-    _nick_map.erase(client->_nickname);
-  }
-  delete_timer(client->_fd);
+	close(client->_fd);
+	if (client->_isRegistered) {
+		std::vector<channel *>::iterator end = _chan_list.end();
+		for (std::vector<channel *>::iterator it = _chan_list.begin(); it != end; it++) {
+			removeMember(client, *it);
+			if ((*it)->_members.empty())
+				removeChannel(*it);
+		}
+		_nick_map.erase(client->_nickname);
+	}
+	delete_timer(client->_fd);
 	delete client;
 }
 
@@ -192,7 +207,7 @@ void server::run()
 			else if (_eventlist.filter == EVFILT_READ)
 				receive_message();
 			else if (_eventlist.filter == EVFILT_TIMER)
-        check_connection(_connections[_eventlist.ident]);
+				check_connection(_connections[_eventlist.ident]);
 		}
 	}
 }

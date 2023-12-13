@@ -4,7 +4,6 @@
 
 void send_reply(struct server &s,struct client &c, std::string message)
 {
-	//std::cerr << "RENTRE RPL\n";
 	c._send_buffer.append(message + "\n");
 	s.write_set(c._fd);
 }
@@ -59,29 +58,30 @@ void	channel::removeInvited(struct client *client)
 		_invite_list.erase(i);
 }
 
-void	channel::removeMember(struct client *client) 
+void	server::removeMember(struct client *client, struct channel *chan)
 {
 	std::vector<struct client*>::iterator i;
-	if ((i = std::find(_members.begin(), _members.end(), client)) != _members.end())
-		_members.erase(i);
-	if ((i = std::find(_operators.begin(), _operators.end(), client)) != _operators.end()) {
-	  _operators.erase(i);
-    if (_operators.empty() && !_members.empty()) {
-      _operators.push_back(_members.front());
-      //TODO send Mode message
-    }
-  }
+	if ((i = std::find(chan->_members.begin(), chan->_members.end(), client)) != chan->_members.end())
+		chan->_members.erase(i);
+	if ((i = std::find(chan->_operators.begin(), chan->_operators.end(), client)) != chan->_operators.end()) {
+		chan->_operators.erase(i);
+		if (chan->_operators.empty() && !chan->_members.empty()) {
+			chan->_operators.push_back(chan->_members.front());
+			send_reply(*this, *client, ":" + _servername + " MODE " + chan->_name + " +o " + client->_nickname);
+		}
+	}
 
 }
 
 void	server::removeChannel(struct channel *channel)
 {
-  for(std::vector<struct channel*>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it) {
-		if (*it == channel) {
+	for(std::vector<struct channel*>::iterator it = _chan_list.begin(); it != _chan_list.end(); ++it) {
+		if (*it == channel)
+		{
 			_chan_list.erase(it);
-      delete channel;
-      return ;
-    }
+			delete channel;
+			return ;
+		}
 	}
 }
 
@@ -198,7 +198,6 @@ void reply(Message &m, struct server &s, struct client &c, int error)
 	int chan;
 	int other;
 	//m.showContent();
-	std::cout << "RPL = " << error << std::endl;
 	switch (m.getCommand()) {
 		case KICK : nick = 1; server = 0; chan = 0; other = 0;break;
 		case INVITE : nick = 0; server = 0; chan = 1; other = 0;break;

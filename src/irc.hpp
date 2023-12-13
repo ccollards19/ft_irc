@@ -21,7 +21,9 @@
 #include <vector>
 #include <netdb.h>
 #include "errors.hpp"
-
+#ifndef DEBUG
+ #define DEBUG 0
+#endif
 #define SERVNAME "irc.ircserv.test"
 #define CLIENT_TTL 50000
 #define REG_TASK_TIMER 5000
@@ -85,7 +87,6 @@ struct channel
 	std::string _pwd;
 	bool isInvited(client *c);
 	void removeInvited(struct client *client);
-	void removeMember(struct client *client);
 	void addClient(client *client);
 	bool isModeSet(char mode);
 
@@ -179,12 +180,14 @@ struct server
 	void privmsg(Message &m, client *client);
 	void part(Message &m, client *client);
 	int ErrMode(Message &m, client *c, int part, channel *chan);
-	void modeK(Message &m, client *client, channel *c);
-	void modeO(Message &m, client *client, channel *c);
-	void modeI(Message &m, client *client, channel *c);
-	void modeL(Message &m, client *client, channel *c);
-	void modeT(Message &m, client *client, channel *c);
+	int modeK(Message &m, client *client, channel *c);
+	int modeO(Message &m, client *client, channel *c);
+	int modeI(Message &m, client *client, channel *c);
+	int modeL(Message &m, client *client, channel *c);
+	int modeT(Message &m, client *client, channel *c);
   	void invite(Message &m, struct client *client);
+
+	void removeMember(struct client *client, struct channel *chan);
 };
 
 
