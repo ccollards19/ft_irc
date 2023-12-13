@@ -40,7 +40,8 @@ enum cmds
 	PASS,
 	USER,
 	PART,
-	BAN
+	BAN,
+	QUIT,
 };
 
 class Message

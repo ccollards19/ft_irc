@@ -469,7 +469,6 @@ void server::join(Message &m, client *client){
 				(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), client));
 		}
 	}
-
 }
 
 void server::topic(Message &m, client *client)
@@ -600,9 +599,4 @@ void	server::quit(Message &m, client *client)
   close_connection(client);
   for (std::map<std::string, struct client*>::iterator it = _nick_map.begin(); it != _nick_map.end(); ++it)
     send_reply(*this, *(it->second), quit_message);
-  std::vector<channel *>::iterator end = _chan_list.end();
-  for (std::vector<channel *>::iterator it = _chan_list.begin(); it != end; it++) {
-    if ((*it)->_members.empty())
-      removeChannel(*it);
-  }
 }
