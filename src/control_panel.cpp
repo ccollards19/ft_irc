@@ -68,7 +68,8 @@ void	server::removeMember(struct client *client, struct channel *chan)
 		chan->_operators.erase(i);
 		if (chan->_operators.empty() && !chan->_members.empty()) {
 			chan->_operators.push_back(chan->_members.front());
-			send_reply(*this, *client, ":" + _servername + " MODE " + chan->_name + " +o " + client->_nickname);
+	    for (i = chan->_members.begin(); i != chan->_members.end() ; ++i)
+			  send_reply(*this, **i, ":" + _servername + " MODE " + chan->_name + " +o " + (*i)->_nickname);
 		}
 	}
 
