@@ -12,7 +12,7 @@
 
 CC	= c++
 
-CCFLAGS	= -Wall -Wextra -Werror -D DEBUG=0 -std=c++98
+CCFLAGS	= -Wall -Wextra -Werror -D DEBUG=1 -std=c++98
 
 NAME	= ircserv
 

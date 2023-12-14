@@ -453,10 +453,12 @@ void server::join(Message &m, client *client){
 				return;
 			}
 		}
-		if (current->isModeSet('i') && !current->isInvited(client)){
+		if (current->isModeSet('i')) {
+			if (!current->isInvited(client)) {
+				reply(m, *this, *client, ERR_INVITEONLYCHAN);
+				return;
+			}
 			current->_invite_list.erase(std::find(current->_invite_list.begin(), current->_invite_list.end(),client));
-			reply(m, *this, *client, ERR_INVITEONLYCHAN);
-			return;
 		}
 		if (std::find(current->_members.begin(), current->_members.end(), client) == current->_members.end())
 			current->_members.push_back(client);
