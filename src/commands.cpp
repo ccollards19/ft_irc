@@ -20,7 +20,7 @@ void server::part(Message &m, struct client *client)
 		return ;
 	}
 	std::string part_msg;
-	if (params.size() > 2)
+	if (params.size() > 1)
 		part_msg = " :" + params[1];
 	else
 		part_msg = "";
