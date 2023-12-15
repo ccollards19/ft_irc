@@ -26,7 +26,7 @@
 #endif
 #define SERVNAME "irc.ircserv.test"
 #define CLIENT_TTL 50000
-#define REG_TASK_TIMER 5000
+#define REG_TASK_TIMER 10000
 enum cmds
 {
 	NONE,

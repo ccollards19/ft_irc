@@ -1,5 +1,6 @@
 #include "irc.hpp"
 #include <cstdlib>
+#include <iostream>
 #include <vector>
 
 //free the ressources and exit
@@ -22,7 +23,8 @@ void server::safe_shutdown(int exit_code) {
 	}
   if (_res_start)
     freeaddrinfo(_res_start);
-  system("leaks ircserv");
+  if (DEBUG)
+    system("leaks ircserv");
 	exit(exit_code);
 }
 
@@ -65,16 +67,16 @@ void server::regular_tasks()
 
 void server::receive_message()
 {
-
 	if ((size_t) _eventlist.data == 0) {
-		if ((_eventlist.flags & EV_EOF) == EV_EOF)
+		if ((_eventlist.flags & EV_EOF) == EV_EOF) { 
+      std::cerr<<"EV_EOF on "<< _eventlist.ident <<std::endl;
 			close_connection(_connections[(size_t) _eventlist.ident]);
+    }
 		return;
 	}
 	char *buffer = (char *) malloc(sizeof(char) * (size_t) _eventlist.data);
 	if (buffer == NULL) {
-		std::cerr << "malloc error" << std::endl
-				  << "error: " << strerror(errno) << std::endl;
+		std::cerr << "malloc error" << std::endl << "error: " << strerror(errno) << std::endl;
 		safe_shutdown(EXIT_FAILURE);
 	}
 	size_t nbyte = recv(_eventlist.ident, buffer, (size_t) _eventlist.data, 0);
@@ -103,11 +105,11 @@ void server::send_message()
 		std::cout << "sent message on fd : " << tmp->_fd << std::endl;//test
 		std::cout << "[" << tmp->_send_buffer << "]" << std::endl;//test
 	}
-	int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(),
-					 tmp->_send_buffer.size(), 0);
-	if (nbyte <
-		0) // EAGAIN should have been used here but the subject does not allow for it
+	int nbyte = send(tmp->_fd, tmp->_send_buffer.c_str(), tmp->_send_buffer.size(), 0);
+	if (nbyte < 0) {// EAGAIN should have been used here but the subject does not allow for it
+		std::cerr << "write error " << std::endl << "error: " << strerror(errno) << std::endl;
 		return;
+  }
 	tmp->_send_buffer.erase(0, nbyte);
 	if (tmp->_send_buffer.empty())
 		write_unset(tmp->_fd);

@@ -22,6 +22,7 @@ static void init_cmds_map(std::map<std::string, int> &_cmds)
 void server::network_init(char *port)
 {
   // init a addrinfo struct to retrieve necesary infos
+  signal(SIGPIPE, SIG_IGN);
   _res_start = NULL;
   memset(&_hints, 0, sizeof(_hints)); // make sure the struct is empty
   _hints.ai_family = AF_UNSPEC;     // IPv4 or IPv6
