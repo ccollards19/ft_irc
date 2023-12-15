@@ -16,17 +16,21 @@ void send_error(struct server &s,struct client &c, std::string message)
 
 void server::register_client(Message &m, struct client *client)
 {
-	if (DEBUG)
-		std::cout<< client->_pass << ":" << client->_nickname << ':' <<client->_username <<"\n";
-	if (!client->_pass || client->_nickname.empty() || client->_username.empty())
-		return;
-	reply(m, *this, *client, RPL_WELCOME);
-	reply(m, *this, *client, RPL_YOURHOST);
-	reply(m, *this, *client, RPL_CREATED);
-	reply(m, *this, *client, RPL_MYINFO);
-	_nick_map[client->_nickname] = client;
-  client->_isRegistered = true;
-}
+  if (DEBUG)
+    std::cout<< client->_pass << ":" << client->_nickname << ':' <<client->_username <<"\n";
+  try { _nick_map.at(client->_nickname); } catch (std::exception &e) {
+    if (!client->_pass || client->_nickname.empty() || client->_username.empty())
+      return;
+    reply(m, *this, *client, RPL_WELCOME);
+    reply(m, *this, *client, RPL_YOURHOST);
+    reply(m, *this, *client, RPL_CREATED);
+    reply(m, *this, *client, RPL_MYINFO); 
+    _nick_map[client->_nickname] = client;
+    client->_isRegistered = true;
+    return;
+  }
+	reply(m, *this, *client, ERR_NICKNAMEINUSE);
+} 
 
 struct channel *server::createChannel(std::string channelName, struct client *client)
 {
