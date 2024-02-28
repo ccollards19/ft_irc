@@ -12,9 +12,9 @@
 
 CC	= c++
 
-CCFLAGS	= -Wall -Wextra -Werror -std=c++98
+CCFLAGS	= -Wall -Wextra -Werror -D DEBUG=1 -std=c++98
 
-NAME	= irc
+NAME	= ircserv
 
 RESET	= \033[0m
 BLACK	= \033[0;30m
@@ -40,6 +40,11 @@ SRCDIR		= src/
 SRC		= $(addprefix $(SRCDIR), $(SRC_LIST))
 
 SRC_LIST	= main.cpp\
+			control_panel.cpp\
+			parsing.cpp\
+			server_internals.cpp\
+			commands.cpp\
+			kevent_setters.cpp
 
 OBJ 	= $(SRC:%.cpp=%.o)
 
